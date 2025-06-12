@@ -136,7 +136,7 @@
 - [ ] **3. Test Live API** (5 min)
   ```bash
   ./test-api-live.sh
-  export GEMINI_API_KEY="AIzaSyB0-rtYB0XkqQ1ZrjWGi-x8gOJxYnSDCwE"
+  export GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
   ```
 
 - [ ] **4. Publish Node.js SDK** (15 min)

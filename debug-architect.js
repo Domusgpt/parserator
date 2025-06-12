@@ -2,7 +2,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 async function debugArchitect() {
-  const genAI = new GoogleGenerativeAI('AIzaSyB0-rtYB0XkqQ1ZrjWGi-x8gOJxYnSDCwE');
+  const genAI = new GoogleGenerativeAI('YOUR_GEMINI_API_KEY_HERE');
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const sample = `From: Dr. Sarah Johnson <sarah.johnson@biotechcorp.com>

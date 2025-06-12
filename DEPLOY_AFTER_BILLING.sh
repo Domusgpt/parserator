@@ -17,10 +17,10 @@ echo -e "${BLUE}📍 Current directory: $(pwd)${NC}"
 
 # Step 1: Set Gemini API Key
 echo -e "\n${YELLOW}🔑 STEP 1: Setting Gemini API Key${NC}"
-echo "Your Gemini API Key: AIzaSyB0-rtYB0XkqQ1ZrjWGi-x8gOJxYnSDCwE"
+echo "Your Gemini API Key: YOUR_GEMINI_API_KEY_HERE"
 echo "Setting as Firebase secret..."
 
-echo "AIzaSyB0-rtYB0XkqQ1ZrjWGi-x8gOJxYnSDCwE" | firebase functions:secrets:set GEMINI_API_KEY --force
+echo "YOUR_GEMINI_API_KEY_HERE" | firebase functions:secrets:set GEMINI_API_KEY --force
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Gemini API key set successfully!${NC}"
