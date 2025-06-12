@@ -50,7 +50,7 @@ Payment Terms: Net 30 days`
     }
   ];
 
-  const genAI = new GoogleGenerativeAI('AIzaSyB0-rtYB0XkqQ1ZrjWGi-x8gOJxYnSDCwE');
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'YOUR_GEMINI_API_KEY_HERE');
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   for (let i = 0; i < emailExamples.length; i++) {
