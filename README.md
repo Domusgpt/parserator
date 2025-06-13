@@ -91,14 +91,16 @@ parse_tool = ParseratorTool(
 Transform web data instantly while browsing:
 
 ### Chrome Extension
-- **Install**: [Chrome Web Store](https://chrome.google.com/webstore)
+- **Status**: Built and ready for Chrome Web Store submission
 - **Use**: Right-click any text → "Parse with Parserator" → Perfect JSON
 - **Features**: Auto-detect schemas, bulk export, local processing
 
 ### VS Code Extension  
-- **Install**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=parserator.parserator)
+- **Status**: Built and packaged (parserator-1.0.0.vsix)
 - **Use**: Select messy data → Ctrl+Shift+P → Generate TypeScript types
 - **Features**: Schema templates, batch processing, framework integration
+
+*Extensions will be published to official stores once API is finalized.*
 
 ---
 
@@ -139,23 +141,21 @@ pip install parserator
 ```
 
 ### 🔹 **Browser Extensions**
-- [Chrome Extension](https://chrome.google.com/webstore) - Right-click parsing
-- [VS Code Extension](https://marketplace.visualstudio.com) - Developer workflow
+- **Chrome Extension**: Built, pending Chrome Web Store submission
+- **VS Code Extension**: Built, pending VS Code Marketplace submission
 
-### 🔹 **Agent Frameworks**
+### 🔹 **Agent Frameworks** *(In Development)*
 ```bash
-# MCP Server (Universal)
+# MCP Server - Coming soon
 npm install -g parserator-mcp-server
 
-# LangChain Integration
+# Framework integrations - In beta
 pip install parserator[langchain]
-
-# CrewAI Integration  
 pip install parserator[crewai]
-
-# Google ADK Integration
 pip install parserator[adk]
 ```
+
+*Contact us for early access to framework integrations.*
 
 ---
 
@@ -277,71 +277,49 @@ Parserator is built on **EMA principles** - a revolutionary approach to ethical 
 
 ## 🧪 **Beta Program**
 
-### **🚀 Current Beta Features**
-- **Multi-LLM Support**: OpenAI, Anthropic, Google Gemini
-- **Advanced Schema Validation**: Type checking and constraint enforcement  
+### **🚀 Beta Features in Development**
+- **Multi-LLM Support**: Working on OpenAI, Anthropic, Google Gemini compatibility
+- **Schema Validation**: Type checking and constraint enforcement  
 - **Batch Processing**: Handle multiple documents simultaneously
-- **Custom Workflow Builder**: Chain parsing operations
-- **Real-time Monitoring**: Live parsing analytics dashboard
+- **Custom Workflows**: Chain parsing operations
+- **Monitoring Dashboard**: Parse analytics and performance metrics
 
 ### **Join the Beta**
-```bash
-# Install beta version
-npm install parserator@beta
 
-# Enable beta features
-parserator config set beta-features true
-```
+**Contact us for beta access:**
+- **Email**: [Gen-rl-millz@parserator.com](mailto:Gen-rl-millz@parserator.com)
+- **Include**: Your use case and which frameworks you're working with
 
-**Beta Feedback**: [Join Discord](https://discord.gg/parserator) | [GitHub Issues](https://github.com/domusgpt/parserator/issues)
+**Beta Feedback**: [GitHub Issues](https://github.com/domusgpt/parserator/issues) | [GitHub Discussions](https://github.com/domusgpt/parserator/discussions)
 
 ---
 
 ## 📊 **Pricing**
 
-### **🆓 Free Tier**
-- **1,000 parses/month**
-- **Basic schema detection**
-- **Community support**
-- **Standard accuracy (90%)**
+**Currently in beta** - Contact us for early access pricing and custom solutions.
 
-### **⚡ Pro ($29/month)**
-- **50,000 parses/month**
-- **Advanced schema templates**
-- **Priority support**
-- **Enhanced accuracy (95%)**
-- **Batch processing**
-
-### **🏢 Enterprise (Custom)**
-- **Unlimited parsing**
-- **On-premise deployment**
-- **Custom integrations**
-- **SLA guarantee**
-- **Dedicated support**
-
-[**Start Free Trial →**](https://parserator.com/pricing)
+- **Email**: [Gen-rl-millz@parserator.com](mailto:Gen-rl-millz@parserator.com)
+- **Beta Program**: Free access for early adopters and feedback providers
 
 ---
 
 ## 🤝 **Community & Support**
 
 ### **📚 Documentation**
-- [**API Reference**](https://docs.parserator.com/api)
-- [**Integration Guides**](https://docs.parserator.com/integrations)
-- [**Agent Frameworks**](https://docs.parserator.com/agents)
-- [**Schema Design**](https://docs.parserator.com/schemas)
+- **API Reference**: Coming soon in `docs/` directory
+- **Integration Guides**: Available in this repository
+- **Examples**: Check `examples/` directory for framework integrations
 
 ### **💬 Community**
-- [**Discord**](https://discord.gg/parserator) - Real-time support and discussions
-- [**GitHub Discussions**](https://github.com/domusgpt/parserator/discussions) - Feature requests and feedback
-- [**YouTube**](https://youtube.com/@parserator) - Tutorials and demos
-- [**LinkedIn**](https://linkedin.com/company/parserator) - Updates and announcements
+- **GitHub Issues**: Bug reports and feature requests
+- **GitHub Discussions**: Community questions and feedback
+- **YouTube**: [@parserator](https://youtube.com/@parserator) - Tutorials and demos coming soon
+- **LinkedIn**: [Company Page](https://linkedin.com/company/parserator) - Updates and announcements
 
 ### **🛠️ Support**
 - **Email**: [Gen-rl-millz@parserator.com](mailto:Gen-rl-millz@parserator.com)
-- **Response Time**: <24 hours (Pro/Enterprise: <4 hours)
-- **Bug Reports**: [GitHub Issues](https://github.com/domusgpt/parserator/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/domusgpt/parserator/discussions)
+- **Response**: We'll get back to you as soon as possible
+- **Beta Support**: Priority support for early adopters
 
 ---
 
@@ -358,25 +336,22 @@ parserator config set beta-features true
 
 ---
 
-## 📈 **Roadmap**
+## 📈 **Development Status**
 
-### **Q2 2025 - Enhanced Intelligence**
-- [ ] **Multi-modal parsing** - Images, PDFs, audio
-- [ ] **Confidence scoring** - Per-field accuracy metrics
-- [ ] **Auto-correction** - Self-healing parsing failures
-- [ ] **Template marketplace** - Community schema sharing
+**Current Focus:**
+- ✅ **Core parsing engine** - Two-stage Architect-Extractor pattern
+- ✅ **Browser extensions** - Chrome and VS Code extensions built
+- ✅ **Agent integrations** - LangChain, CrewAI, Google ADK support
+- 🚧 **Documentation** - API reference and integration guides in progress
+- 🚧 **Beta testing** - Gathering feedback from early adopters
 
-### **Q3 2025 - Enterprise Features**  
-- [ ] **On-premise deployment** - Full air-gapped operation
-- [ ] **Advanced monitoring** - Parsing analytics and optimization
-- [ ] **Workflow automation** - Trigger-based parsing pipelines
-- [ ] **Compliance tools** - GDPR, HIPAA, SOX support
+**Planned Features:**
+- Multi-modal parsing (images, PDFs, audio)
+- Enhanced schema validation and templates
+- Enterprise deployment options
+- Additional framework integrations
 
-### **Q4 2025 - Platform Expansion**
-- [ ] **Mobile SDKs** - iOS and Android integration
-- [ ] **Desktop applications** - Native Windows, Mac, Linux
-- [ ] **Zapier/Make integration** - No-code automation
-- [ ] **Microsoft Power Platform** - Enterprise workflow integration
+*Roadmap details will be updated based on community feedback and beta testing results.*
 
 ---
 
