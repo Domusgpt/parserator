@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Domain Status Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .status-box {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .working { border-left: 4px solid #4CAF50; }
+        .pending { border-left: 4px solid #FF9800; }
+        .error { border-left: 4px solid #F44336; }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #1976D2; }
+    </style>
+</head>
+<body>
+    <h1>Parserator Domain Status Checker</h1>
+    
+    <div class="status-box working">
+        <h3>✅ Firebase Site</h3>
+        <p>URL: <a href="https://parserator-production.web.app" target="_blank">https://parserator-production.web.app</a></p>
+        <p>Status: <strong>WORKING</strong></p>
+    </div>
+    
+    <div class="status-box pending" id="domain-status">
+        <h3>🔄 Custom Domain</h3>
+        <p>URL: <a href="https://parserator.com" target="_blank">https://parserator.com</a></p>
+        <p>Status: <strong id="status-text">CHECKING...</strong></p>
+        <p id="status-detail"></p>
+    </div>
+    
+    <button onclick="checkDomain()">Check Domain Status</button>
+    
+    <div class="status-box">
+        <h3>📋 What's Happening:</h3>
+        <ol>
+            <li><strong>DNS Propagation:</strong> Can take 1-48 hours (usually 2-4 hours)</li>
+            <li><strong>Firebase Verification:</strong> Checks every few minutes</li>
+            <li><strong>SSL Certificate:</strong> Generated after verification</li>
+        </ol>
+        
+        <h4>🔧 Quick Fixes:</h4>
+        <ul>
+            <li>Go to Firebase Console → Hosting → Domains</li>
+            <li>Click "Check again" on parserator.com</li>
+            <li>If still pending after 4 hours, check GoDaddy DNS settings</li>
+        </ul>
+    </div>
+    
+    <script>
+        async function checkDomain() {
+            const statusBox = document.getElementById('domain-status');
+            const statusText = document.getElementById('status-text');
+            const statusDetail = document.getElementById('status-detail');
+            
+            statusText.textContent = 'CHECKING...';
+            statusBox.className = 'status-box pending';
+            
+            try {
+                // Check if domain responds
+                const response = await fetch('https://parserator.com', { 
+                    mode: 'no-cors',
+                    cache: 'no-cache' 
+                });
+                
+                // Try to load an image to test if content is correct
+                const img = new Image();
+                img.onload = function() {
+                    statusText.textContent = 'WORKING!';
+                    statusBox.className = 'status-box working';
+                    statusDetail.textContent = 'Your domain is now connected to Firebase!';
+                };
+                img.onerror = function() {
+                    statusText.textContent = 'DNS PENDING';
+                    statusBox.className = 'status-box pending';
+                    statusDetail.textContent = 'Domain is responding but not showing Firebase content yet. This is normal - DNS is still propagating.';
+                };
+                img.src = 'https://parserator.com/favicon.ico';
+                
+            } catch (error) {
+                statusText.textContent = 'CHECKING FAILED';
+                statusBox.className = 'status-box error';
+                statusDetail.textContent = 'Could not reach domain. This might be due to DNS propagation or CORS policy.';
+            }
+        }
+        
+        // Check on load
+        checkDomain();
+        
+        // Auto-check every 60 seconds
+        setInterval(checkDomain, 60000);
+    </script>
+</body>
+</html>

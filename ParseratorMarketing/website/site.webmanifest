@@ -1,0 +1,81 @@
+{
+  "name": "Parserator - AI Agent Data Parsing",
+  "short_name": "Parserator",
+  "description": "Transform any unstructured input into agent-ready JSON with 95% accuracy. Built for ADK, MCP, LangChain, and any agent framework.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0A1C",
+  "theme_color": "#00D9FF",
+  "orientation": "portrait-primary",
+  "categories": ["developer", "productivity", "business"],
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon-64x64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Try Live API",
+      "short_name": "API Demo",
+      "description": "Try the Parserator API with live examples",
+      "url": "/demo",
+      "icons": [
+        {
+          "src": "favicon-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "EMA First Principles",
+      "short_name": "EMA",
+      "description": "Learn about Exoditical Moral Architecture",
+      "url": "/#first-principles",
+      "icons": [
+        {
+          "src": "favicon-96x96.png", 
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parserator Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <img src="../icons/icon-48.png" alt="Parserator" class="logo">
+        <div class="header-text">
+          <h1>Parserator Settings</h1>
+          <p>Configure your AI data extraction preferences</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- API Configuration -->
+      <section class="section">
+        <div class="section-header">
+          <h2>API Configuration</h2>
+          <p>Connect your Parserator account to enable data extraction</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="apiKey">API Key</label>
+          <div class="input-group">
+            <input type="password" id="apiKey" placeholder="pk_live_..." class="form-control">
+            <button type="button" id="toggleApiKey" class="btn btn-secondary">
+              <span class="show-text">Show</span>
+              <span class="hide-text hidden">Hide</span>
+            </button>
+          </div>
+          <small class="help-text">
+            Get your free API key at <a href="https://parserator.com" target="_blank">parserator.com</a>
+          </small>
+        </div>
+        
+        <div class="form-group">
+          <button type="button" id="testApiKey" class="btn btn-primary">
+            <span class="test-text">Test Connection</span>
+            <span class="testing-text hidden">Testing...</span>
+          </button>
+          <div id="apiStatus" class="status-message hidden"></div>
+        </div>
+      </section>
+
+      <!-- Parsing Preferences -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Parsing Preferences</h2>
+          <p>Customize how Parserator extracts data from web pages</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="defaultSchema">Default Schema Type</label>
+          <select id="defaultSchema" class="form-control">
+            <option value="auto">Auto-detect Schema</option>
+            <option value="contact">Contact Information</option>
+            <option value="product">Product Details</option>
+            <option value="article">Article Content</option>
+            <option value="table">Table Data</option>
+            <option value="custom">Custom Schema</option>
+          </select>
+          <small class="help-text">Choose the default schema type for quick parsing</small>
+        </div>
+        
+        <div class="form-group">
+          <label for="accuracyThreshold">Minimum Accuracy Threshold</label>
+          <div class="slider-group">
+            <input type="range" id="accuracyThreshold" min="0.5" max="1.0" step="0.05" value="0.8" class="slider">
+            <span id="accuracyValue" class="slider-value">80%</span>
+          </div>
+          <small class="help-text">Only show results above this confidence level</small>
+        </div>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="autoExport" class="checkbox">
+            <span class="checkbox-custom"></span>
+            Automatically export results to clipboard
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="smartSelection" class="checkbox">
+            <span class="checkbox-custom"></span>
+            Enable smart element selection mode
+          </label>
+        </div>
+      </section>
+
+      <!-- UI Preferences -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Interface Preferences</h2>
+          <p>Customize the extension interface and behavior</p>
+        </div>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="showNotifications" class="checkbox">
+            <span class="checkbox-custom"></span>
+            Show desktop notifications
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="keyboardShortcuts" class="checkbox">
+            <span class="checkbox-custom"></span>
+            Enable keyboard shortcuts
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label for="theme">Extension Theme</label>
+          <select id="theme" class="form-control">
+            <option value="auto">Auto (System)</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Templates -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Templates</h2>
+          <p>Manage your parsing templates for quick reuse</p>
+        </div>
+        
+        <div class="templates-container">
+          <div id="templatesList" class="templates-list">
+            <div class="loading-templates">Loading templates...</div>
+          </div>
+          
+          <button type="button" id="refreshTemplates" class="btn btn-secondary">
+            Refresh Templates
+          </button>
+        </div>
+      </section>
+
+      <!-- Advanced Settings -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Advanced Settings</h2>
+          <p>Advanced configuration options</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="apiTimeout">API Request Timeout (seconds)</label>
+          <input type="number" id="apiTimeout" min="5" max="60" value="15" class="form-control">
+        </div>
+        
+        <div class="form-group">
+          <label for="retryAttempts">Retry Attempts on Failure</label>
+          <input type="number" id="retryAttempts" min="0" max="5" value="2" class="form-control">
+        </div>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="debugMode" class="checkbox">
+            <span class="checkbox-custom"></span>
+            Enable debug logging
+          </label>
+        </div>
+      </section>
+
+      <!-- Data & Privacy -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Data & Privacy</h2>
+          <p>Manage your data and privacy settings</p>
+        </div>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="analytics" class="checkbox">
+            <span class="checkbox-custom"></span>
+            Allow anonymous usage analytics
+          </label>
+          <small class="help-text">Help improve Parserator by sharing anonymous usage data</small>
+        </div>
+        
+        <div class="form-group">
+          <button type="button" id="clearCache" class="btn btn-secondary">
+            Clear Cached Data
+          </button>
+          <small class="help-text">Remove all locally stored parsing results and cache</small>
+        </div>
+        
+        <div class="form-group">
+          <button type="button" id="exportSettings" class="btn btn-secondary">
+            Export Settings
+          </button>
+          <button type="button" id="importSettings" class="btn btn-secondary">
+            Import Settings
+          </button>
+          <input type="file" id="settingsFile" accept=".json" class="hidden">
+        </div>
+      </section>
+
+      <!-- About -->
+      <section class="section">
+        <div class="section-header">
+          <h2>About</h2>
+        </div>
+        
+        <div class="about-content">
+          <div class="version-info">
+            <strong>Version:</strong> <span id="extensionVersion">1.0.1</span>
+          </div>
+          
+          <div class="links">
+            <a href="https://parserator.com" target="_blank" class="link">
+              Visit Website
+            </a>
+            <a href="https://parserator.com/docs" target="_blank" class="link">
+              Documentation
+            </a>
+            <a href="https://parserator.com/support" target="_blank" class="link">
+              Support
+            </a>
+            <a href="https://parserator.com/privacy" target="_blank" class="link">
+              Privacy Policy
+            </a>
+          </div>
+          
+          <div class="ema-info">
+            <h3>EMA Compliant</h3>
+            <p>
+              Parserator follows <strong>Exoditical Moral Architecture</strong> principles.
+              Your data belongs to you. Export everything. Zero vendor lock-in.
+            </p>
+            <a href="https://parserator.com/ema" target="_blank" class="ema-link">
+              Learn about EMA →
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="save-status">
+        <span id="saveStatus" class="save-message hidden"></span>
+      </div>
+      <div class="footer-buttons">
+        <button type="button" id="resetDefaults" class="btn btn-link">
+          Reset to Defaults
+        </button>
+        <div class="primary-buttons">
+          <button type="button" id="saveSettings" class="btn btn-primary">
+            Save Settings
+          </button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

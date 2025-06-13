@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MVEP Demo - Parserator Data Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0F0A1C 0%, #1A1B3A 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            padding: 2rem;
+            text-align: center;
+            background: rgba(26, 27, 58, 0.6);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #00D9FF, #FF10F0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+        
+        .container {
+            flex: 1;
+            display: flex;
+            padding: 2rem;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .controls {
+            width: 350px;
+            background: rgba(26, 27, 58, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            height: fit-content;
+        }
+        
+        .visualization {
+            flex: 1;
+            background: rgba(26, 27, 58, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 1rem;
+            backdrop-filter: blur(20px);
+            position: relative;
+        }
+        
+        #mvep-canvas {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            background: #0a0a0f;
+        }
+        
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #00D9FF;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            color: white;
+            font-family: 'Monaco', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+        
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(45deg, #00D9FF, #FF10F0);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 217, 255, 0.3);
+        }
+        
+        .slider {
+            width: 100%;
+            margin: 0.5rem 0;
+        }
+        
+        .param-value {
+            text-align: right;
+            color: #FF10F0;
+            font-family: 'Monaco', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .examples {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .example-btn {
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+        
+        .example-btn:hover {
+            background: rgba(0, 217, 255, 0.2);
+        }
+        
+        .info {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(0, 217, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: #00D9FF;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .controls {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>MVEP Advanced 4D Demo</h1>
+        <p>Experience true hypercube mathematics • Moiré patterns reveal data topology • Part of the Parserator ecosystem</p>
+    </div>
+    
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label>JSON Data Input</label>
+                <textarea id="json-input" placeholder='{"name": "example", "value": 42, "nested": {"data": [1, 2, 3]}}'>{
+  "users": [
+    {
+      "name": "Alice",
+      "score": 95,
+      "badges": ["gold", "platinum"],
+      "stats": {
+        "level": 42,
+        "experience": 15000
+      }
+    },
+    {
+      "name": "Bob", 
+      "score": 87,
+      "badges": ["silver"],
+      "stats": {
+        "level": 38,
+        "experience": 12500
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "timestamp": "2025-06-07"
+  }
+}</textarea>
+            </div>
+            
+            <button onclick="updateVisualization()">Visualize Data</button>
+            
+            <div class="control-group" style="margin-top: 2rem;">
+                <label>Rotation Speed</label>
+                <input type="range" class="slider" id="rotation" min="0" max="2" step="0.1" value="1">
+                <div class="param-value" id="rotation-value">1.0</div>
+            </div>
+            
+            <div class="control-group">
+                <label>Grid Density</label>
+                <input type="range" class="slider" id="density" min="0.3" max="2" step="0.1" value="1">
+                <div class="param-value" id="density-value">1.0</div>
+            </div>
+            
+            <div class="examples">
+                <label>Example Data Sets</label>
+                <button class="example-btn" onclick="loadExample('simple')">Simple Object</button>
+                <button class="example-btn" onclick="loadExample('array')">Array Structure</button>
+                <button class="example-btn" onclick="loadExample('nested')">Deeply Nested</button>
+                <button class="example-btn" onclick="loadExample('parserator')">Parserator Output</button>
+            </div>
+            
+            <div class="info">
+                <strong>How it works:</strong><br>
+                • Nesting depth → 4D dimension<br>
+                • Object complexity → Shape morphing<br>
+                • Data types → Color spectrum<br>
+                • Array size → Rotation speed
+            </div>
+        </div>
+        
+        <div class="visualization">
+            <canvas id="mvep-canvas"></canvas>
+            <div class="loading" id="loading">Initializing MVEP...</div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Import MVEP modules (inline for demo)
+        const examples = {
+            simple: {
+                name: "Simple Test",
+                value: 42,
+                active: true
+            },
+            array: {
+                items: [1, 2, 3, 4, 5],
+                tags: ["red", "green", "blue"],
+                matrix: [[1, 2], [3, 4], [5, 6]]
+            },
+            nested: {
+                level1: {
+                    level2: {
+                        level3: {
+                            level4: {
+                                deep: "value",
+                                array: [1, 2, 3]
+                            }
+                        }
+                    }
+                }
+            },
+            parserator: {
+                parsedData: {
+                    name: "John Doe",
+                    email: "john@example.com",
+                    phone: "555-123-4567",
+                    address: {
+                        street: "123 Main St",
+                        city: "Boston",
+                        state: "MA"
+                    }
+                },
+                metadata: {
+                    confidence: 0.95,
+                    tokensUsed: 1250,
+                    processingTimeMs: 800
+                }
+            }
+        };
+        
+        // Simplified MVEP kernel for demo
+        class MVEPDemo {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.time = 0;
+                this.params = {
+                    rotation: 1.0,
+                    density: 1.0,
+                    complexity: 0.5,
+                    depth: 3.0
+                };
+                
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                
+                this.animate();
+            }
+            
+            resize() {
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+            }
+            
+            analyzeJSON(data) {
+                const analysis = {
+                    depth: this.getDepth(data),
+                    nodes: this.countNodes(data),
+                    complexity: this.getComplexity(data)
+                };
+                
+                // Map to visual parameters
+                this.params.depth = 3.0 + (analysis.depth / 5) * 1.5;
+                this.params.complexity = Math.min(analysis.complexity / 20, 1.0);
+                
+                return analysis;
+            }
+            
+            getDepth(obj, current = 0) {
+                if (typeof obj !== 'object' || obj === null) return current;
+                
+                let maxDepth = current;
+                for (let key in obj) {
+                    maxDepth = Math.max(maxDepth, this.getDepth(obj[key], current + 1));
+                }
+                return maxDepth;
+            }
+            
+            countNodes(obj) {
+                if (typeof obj !== 'object' || obj === null) return 1;
+                
+                let count = 1;
+                for (let key in obj) {
+                    count += this.countNodes(obj[key]);
+                }
+                return count;
+            }
+            
+            getComplexity(obj) {
+                if (typeof obj !== 'object' || obj === null) return 1;
+                
+                let complexity = Object.keys(obj).length;
+                for (let key in obj) {
+                    complexity += this.getComplexity(obj[key]) * 0.5;
+                }
+                return complexity;
+            }
+            
+            animate() {
+                this.time += 0.01 * this.params.rotation;
+                
+                const ctx = this.ctx;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                
+                // Clear canvas
+                ctx.fillStyle = '#0a0a0f';
+                ctx.fillRect(0, 0, width, height);
+                
+                // Draw 4D projection (simplified)
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const size = Math.min(width, height) * 0.3;
+                
+                // Draw polytopal structure
+                ctx.strokeStyle = '#00D9FF';
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.8;
+                
+                // Simulate 4D hypercube projection
+                const vertices = this.generateHypercubeVertices(size);
+                const projected = this.project4Dto2D(vertices);
+                
+                ctx.beginPath();
+                projected.forEach((vertex, i) => {
+                    const x = centerX + vertex.x;
+                    const y = centerY + vertex.y;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                    
+                    // Draw vertex
+                    ctx.fillStyle = `hsl(${(i * 20 + this.time * 50) % 360}, 70%, 60%)`;
+                    ctx.fillRect(x - 2, y - 2, 4, 4);
+                });
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Draw grid density
+                const gridSize = 20 / this.params.density;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 0.5;
+                
+                for (let x = 0; x < width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+                
+                for (let y = 0; y < height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+                
+                requestAnimationFrame(() => this.animate());
+            }
+            
+            generateHypercubeVertices(size) {
+                const vertices = [];
+                for (let i = 0; i < 16; i++) {
+                    vertices.push({
+                        x: (i & 1) ? size : -size,
+                        y: (i & 2) ? size : -size,
+                        z: (i & 4) ? size : -size,
+                        w: (i & 8) ? size : -size
+                    });
+                }
+                return vertices;
+            }
+            
+            project4Dto2D(vertices) {
+                return vertices.map(v => {
+                    // Rotate in 4D
+                    const angle = this.time;
+                    const cos = Math.cos(angle);
+                    const sin = Math.sin(angle);
+                    
+                    // XW rotation
+                    const x1 = v.x * cos - v.w * sin;
+                    const w1 = v.x * sin + v.w * cos;
+                    
+                    // YZ rotation
+                    const y1 = v.y * cos - v.z * sin;
+                    const z1 = v.y * sin + v.z * cos;
+                    
+                    // Project to 3D
+                    const perspective = 3 / (4 - w1 * 0.001);
+                    const x3d = x1 * perspective;
+                    const y3d = y1 * perspective;
+                    const z3d = z1 * perspective;
+                    
+                    // Project to 2D
+                    const scale = 200 / (200 + z3d);
+                    return {
+                        x: x3d * scale * (0.5 + this.params.complexity * 0.5),
+                        y: y3d * scale * (0.5 + this.params.complexity * 0.5)
+                    };
+                });
+            }
+            
+            updateParams(params) {
+                Object.assign(this.params, params);
+            }
+        }
+        
+        // Initialize demo
+        let mvepDemo;
+        
+        window.onload = () => {
+            const canvas = document.getElementById('mvep-canvas');
+            mvepDemo = new MVEPDemo(canvas);
+            
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+            
+            // Initial visualization
+            updateVisualization();
+            
+            // Slider handlers
+            document.getElementById('rotation').addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('rotation-value').textContent = value.toFixed(1);
+                mvepDemo.updateParams({ rotation: value });
+            });
+            
+            document.getElementById('density').addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('density-value').textContent = value.toFixed(1);
+                mvepDemo.updateParams({ density: value });
+            });
+        };
+        
+        window.updateVisualization = () => {
+            try {
+                const jsonText = document.getElementById('json-input').value;
+                const data = JSON.parse(jsonText);
+                
+                mvepDemo.analyzeJSON(data);
+                
+                // Visual feedback
+                document.getElementById('json-input').style.borderColor = '#00D9FF';
+                setTimeout(() => {
+                    document.getElementById('json-input').style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                }, 500);
+            } catch (e) {
+                console.error('Invalid JSON:', e);
+                document.getElementById('json-input').style.borderColor = '#FF004D';
+            }
+        };
+        
+        window.loadExample = (type) => {
+            const example = examples[type];
+            document.getElementById('json-input').value = JSON.stringify(example, null, 2);
+            updateVisualization();
+        };
+    </script>
+</body>
+</html>

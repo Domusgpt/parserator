@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parserator - AI Data Parser</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <img src="../icons/icon-32.png" alt="Parserator" class="logo">
+      <h1>Parserator</h1>
+      <span class="tagline">95% Accurate Data Extraction</span>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Parse Options -->
+      <div class="section">
+        <h3>Quick Parse</h3>
+        <div class="buttons">
+          <button id="parseSelection" class="btn btn-primary">
+            Parse Selection
+          </button>
+          <button id="parseFullPage" class="btn btn-secondary">
+            Parse Full Page
+          </button>
+        </div>
+      </div>
+
+      <!-- Schema Selection -->
+      <div class="section">
+        <h3>Output Schema</h3>
+        <select id="schemaSelect" class="schema-select">
+          <option value="auto">Auto-detect Schema</option>
+          <option value="contact">Contact Information</option>
+          <option value="product">Product Details</option>
+          <option value="article">Article Content</option>
+          <option value="table">Table Data</option>
+          <option value="custom">Custom Schema</option>
+        </select>
+      </div>
+
+      <!-- Custom Schema Input (hidden by default) -->
+      <div id="customSchemaSection" class="section hidden">
+        <h3>Custom Schema (JSON)</h3>
+        <textarea id="customSchema" placeholder='{"title": "string", "price": "number", "description": "string"}'></textarea>
+      </div>
+
+      <!-- Results Area -->
+      <div id="resultsSection" class="section hidden">
+        <h3>Parsing Results</h3>
+        <div class="results-header">
+          <span id="accuracyScore" class="accuracy-badge">95% Accuracy</span>
+          <button id="exportResults" class="btn btn-export">Export JSON</button>
+        </div>
+        <div id="resultsContainer" class="results-container">
+          <pre id="resultsOutput"></pre>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingSection" class="section hidden">
+        <div class="loading-spinner"></div>
+        <p>Extracting structured data...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="errorSection" class="section hidden">
+        <div class="error-message">
+          <span class="error-icon">⚠️</span>
+          <span id="errorText">An error occurred</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-links">
+        <a href="https://parserator.com" target="_blank">Website</a>
+        <a href="#" id="openSettings">Settings</a>
+        <a href="#" id="openSidePanel">Side Panel</a>
+      </div>
+      <div class="ema-badge">
+        <span>EMA Compliant</span>
+        <span class="ema-tooltip">Exoditical Moral Architecture - Zero vendor lock-in</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

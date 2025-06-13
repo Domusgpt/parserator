@@ -1,0 +1,86 @@
+{
+  "manifest_version": 3,
+  "name": "Parserator - AI Data Parser",
+  "version": "1.0.1",
+  "description": "Extract structured data from any webpage with 95% accuracy using Parserator's Architect-Extractor pattern",
+  "homepage_url": "https://parserator.com",
+  
+  "author": "GEN-RL-MiLLz",
+  
+  "icons": {
+    "16": "icons/icon-16.png",
+    "24": "icons/icon-24.png", 
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Parserator - Extract Structured Data",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "24": "icons/icon-24.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+
+  "background": {
+    "service_worker": "background/background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "run_at": "document_end"
+    }
+  ],
+
+  "options_page": "options/options.html",
+
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "sidePanel"
+  ],
+
+  "host_permissions": [
+    "https://app-5108296280.us-central1.run.app/*",
+    "https://parserator.com/*"
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*.png", "lib/*.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "commands": {
+    "parse-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Parse selected text with Parserator"
+    },
+    "open-sidepanel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Open Parserator side panel"
+    }
+  }
+}

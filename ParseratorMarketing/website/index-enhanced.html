@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parserator - The Data Liberation Revolution</title>
+    <meta name="description" content="Join the Exoditical Moral Architecture revolution. Professional data transformation that makes leaving as elegant as joining. Because your data deserves freedom.">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="Parserator - Data Liberation Revolution">
+    <meta property="og:description" content="The first EMA-compliant platform. Where offboarding is as elegant as onboarding. Join the data liberation movement.">
+    <meta property="og:image" content="https://parserator.com/ema-revolution.png">
+    <meta property="og:url" content="https://parserator.com">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        :root {
+            --neon-cyan: #00FFFF;
+            --neon-pink: #FF0080;
+            --neon-orange: #FF4500;
+            --neon-purple: #8A2BE2;
+            --neon-green: #00FF41;
+            --electric-blue: #007FFF;
+            --laser-red: #FF073A;
+            --cosmic-violet: #9D00FF;
+            --quantum-teal: #40E0D0;
+            --plasma-yellow: #FFFF00;
+            --deep-space: #0B0C1F;
+            --void-black: #000000;
+            --nebula-dark: #1a1a2e;
+            --glass-ultra: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --hologram-gradient: linear-gradient(45deg, #00FFFF, #FF0080, #00FF41);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 400;
+            line-height: 1.6;
+            color: #ffffff;
+            background: radial-gradient(ellipse at center, var(--deep-space) 0%, var(--void-black) 70%);
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Moiré Pattern Background with 3D Effect */
+        .quantum-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            overflow: hidden;
+        }
+        
+        .quantum-grid::before,
+        .quantum-grid::after,
+        .moire-layer-1,
+        .moire-layer-2,
+        .moire-layer-3 {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            pointer-events: none;
+        }
+        
+        /* Base grid - cyan */
+        .quantum-grid::before {
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.15) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moireShift1 20s linear infinite;
+            transform: rotate(0deg);
+        }
+        
+        /* Offset grid - red shadow */
+        .quantum-grid::after {
+            background-image: 
+                linear-gradient(rgba(255, 0, 0, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moireShift2 25s linear infinite reverse;
+            transform: rotate(2deg);
+        }
+        
+        /* Additional moiré layers */
+        .moire-layer-1 {
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.08) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.08) 2px, transparent 2px);
+            background-size: 100px 100px;
+            animation: moireShift3 35s linear infinite;
+            transform: rotate(-1deg);
+        }
+        
+        .moire-layer-2 {
+            background-image: 
+                linear-gradient(rgba(255, 0, 0, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06) 1px, transparent 1px);
+            background-size: 75px 75px;
+            animation: moireShift4 40s linear infinite reverse;
+            transform: rotate(1.5deg);
+        }
+        
+        .moire-layer-3 {
+            background-image: 
+                linear-gradient(45deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(-45deg, rgba(255, 0, 0, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: moireShift5 30s linear infinite;
+            transform: rotate(0.5deg);
+        }
+        
+        @keyframes moireShift1 {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
+        }
+        
+        @keyframes moireShift2 {
+            0% { background-position: 0 0; }
+            100% { background-position: -50px -50px; }
+        }
+        
+        @keyframes moireShift3 {
+            0% { background-position: 0 0; transform: rotate(-1deg) scale(1); }
+            50% { transform: rotate(-1deg) scale(1.05); }
+            100% { background-position: 100px 100px; transform: rotate(-1deg) scale(1); }
+        }
+        
+        @keyframes moireShift4 {
+            0% { background-position: 0 0; }
+            100% { background-position: 75px 75px; }
+        }
+        
+        @keyframes moireShift5 {
+            0% { background-position: 0 0; opacity: 0.5; }
+            50% { opacity: 0.8; }
+            100% { background-position: -60px -60px; opacity: 0.5; }
+        }
+
+        /* Particle Field */
+        .particle-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            animation: particleFloat linear infinite;
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+        
+        /* Holographic Text Effects */
+        .hologram-text {
+            background: var(--hologram-gradient);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: hologramShift 3s ease-in-out infinite;
+            position: relative;
+        }
+
+        .hologram-text::before {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background: var(--hologram-gradient);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: hologramGlitch 4s linear infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes hologramShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes hologramGlitch {
+            0%, 90%, 100% { transform: translate(0); }
+            95% { transform: translate(2px, 0); }
+            97% { transform: translate(-2px, 0); }
+        }
+        
+        /* Ultra Glass Morphism */
+        .ultra-glass {
+            background: var(--glass-ultra);
+            backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ultra-glass::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        /* Revolutionary Hero Animation */
+        .liberation-title {
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            font-size: clamp(3rem, 8vw, 8rem);
+            line-height: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: linear-gradient(45deg, var(--neon-cyan), var(--laser-red), var(--neon-green), var(--cosmic-violet));
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: revolutionPulse 4s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            position: relative;
+        }
+
+        @keyframes revolutionPulse {
+            0%, 100% { 
+                background-position: 0% 50%;
+                transform: scale(1);
+            }
+            25% { 
+                background-position: 100% 50%;
+                transform: scale(1.02);
+            }
+            50% { 
+                background-position: 50% 100%;
+                transform: scale(1);
+            }
+            75% { 
+                background-position: 0% 100%;
+                transform: scale(1.01);
+            }
+        }
+
+        /* PARSERATOR Ultra Sleek Display */
+        .parserator-container {
+            text-align: center;
+            margin: 4rem 0;
+            position: relative;
+        }
+
+        .parserator-title {
+            font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
+            font-weight: 200;
+            font-size: clamp(4rem, 12vw, 12rem);
+            letter-spacing: 0.05em;
+            position: relative;
+            display: inline-block;
+            margin: 2rem 0;
+            background: linear-gradient(135deg, 
+                #40E0D0 0%,     /* Teal */
+                #00CED1 15%,    /* Dark Turquoise */
+                #20B2AA 30%,   /* Light Sea Green */
+                #FFA500 60%,   /* Orange */
+                #FF8C00 80%,   /* Dark Orange */
+                #FF7F50 100%   /* Coral */
+            );
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: parseShimmer 4s ease-in-out infinite, parseFloat 6s ease-in-out infinite;
+            filter: drop-shadow(0 0 40px rgba(64, 224, 208, 0.4)) drop-shadow(0 0 80px rgba(255, 165, 0, 0.3));
+            cursor: default;
+        }
+
+        .parserator-title::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: linear-gradient(135deg, 
+                rgba(64, 224, 208, 0.1) 0%,
+                rgba(255, 165, 0, 0.1) 100%
+            );
+            border-radius: 20px;
+            z-index: -2;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .parserator-title::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.4) 20%, 
+                rgba(255, 255, 255, 0.6) 50%, 
+                rgba(255, 255, 255, 0.4) 80%, 
+                transparent 100%
+            );
+            animation: shimmerSweep 3s ease-in-out infinite;
+            z-index: 1;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
+        .parserator-title:hover::before {
+            opacity: 1;
+        }
+
+        .parserator-title:hover {
+            transform: translateY(-5px) scale(1.02);
+            filter: drop-shadow(0 0 60px rgba(64, 224, 208, 0.6)) drop-shadow(0 0 120px rgba(255, 165, 0, 0.5));
+        }
+
+        @keyframes parseShimmer {
+            0%, 100% { 
+                background-position: 0% 50%; 
+            }
+            50% { 
+                background-position: 100% 50%; 
+            }
+        }
+
+        @keyframes parseFloat {
+            0%, 100% { 
+                transform: translateY(0px) scale(1);
+            }
+            50% { 
+                transform: translateY(-8px) scale(1.01);
+            }
+        }
+
+        @keyframes shimmerSweep {
+            0% { 
+                left: -100%; 
+                opacity: 0;
+            }
+            20% { 
+                opacity: 1;
+            }
+            80% { 
+                opacity: 1;
+            }
+            100% { 
+                left: 100%; 
+                opacity: 0;
+            }
+        }
+
+
+        /* Revolutionary Buttons */
+        .revolution-btn {
+            background: linear-gradient(45deg, var(--laser-red), var(--neon-orange));
+            border: none;
+            color: white;
+            padding: 20px 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-radius: 50px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 0 30px rgba(255, 7, 58, 0.3);
+        }
+
+        .revolution-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s;
+        }
+
+        .revolution-btn:hover::before {
+            left: 100%;
+        }
+
+        .revolution-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(255, 7, 58, 0.5);
+        }
+
+        .liberation-btn {
+            background: transparent;
+            border: 3px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 17px 37px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-radius: 50px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: inset 0 0 0 0 var(--neon-cyan);
+        }
+
+        .liberation-btn:hover {
+            color: var(--void-black);
+            box-shadow: inset 300px 0 0 0 var(--neon-cyan);
+            transform: translateY(-3px);
+        }
+
+        /* Quantum Feature Cards */
+        .quantum-card {
+            background: var(--glass-ultra);
+            backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .quantum-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .quantum-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .quantum-card:hover::before,
+        .quantum-card:hover::after {
+            opacity: 1;
+        }
+
+        .quantum-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            border-color: rgba(0, 255, 255, 0.5);
+            box-shadow: 0 30px 60px rgba(0, 255, 255, 0.2);
+        }
+
+        /* Navigation Enhancement */
+        .nav-quantum {
+            background: rgba(11, 12, 31, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-link-quantum {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.9rem;
+        }
+
+        .nav-link-quantum::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--neon-cyan), var(--cosmic-violet));
+            border-radius: 25px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .nav-link-quantum:hover::before {
+            opacity: 1;
+        }
+
+        .nav-link-quantum:hover {
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Manifesto Enhancement */
+        .manifesto-card {
+            background: var(--glass-ultra);
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 50px;
+            position: relative;
+            transition: all 0.4s ease;
+            margin-bottom: 30px;
+        }
+
+        .manifesto-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(0, 255, 255, 0.05), rgba(255, 0, 128, 0.05));
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .manifesto-card:hover::before {
+            opacity: 1;
+        }
+
+        .manifesto-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 255, 255, 0.3);
+            box-shadow: 0 25px 50px rgba(0, 255, 255, 0.15);
+        }
+
+        /* Responsive Enhancements */
+        @media (max-width: 768px) {
+            .liberation-title {
+                font-size: clamp(2rem, 8vw, 4rem);
+            }
+            
+            .parserator-title {
+                font-size: clamp(3rem, 10vw, 8rem);
+                letter-spacing: 0.03em;
+            }
+            
+            .revolution-btn,
+            .liberation-btn {
+                padding: 15px 30px;
+                font-size: 1rem;
+            }
+        }
+
+        /* Loading Animation */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(50px);
+            animation: fadeInUp 1s ease-out forwards;
+        }
+
+        .fade-in-up:nth-child(1) { animation-delay: 0.1s; }
+        .fade-in-up:nth-child(2) { animation-delay: 0.2s; }
+        .fade-in-up:nth-child(3) { animation-delay: 0.3s; }
+        .fade-in-up:nth-child(4) { animation-delay: 0.4s; }
+        .fade-in-up:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scroll Progress Bar */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--laser-red), var(--neon-green));
+            z-index: 9999;
+            transition: width 0.1s ease;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--deep-space);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(var(--neon-cyan), var(--cosmic-violet));
+            border-radius: 6px;
+            border: 1px solid var(--glass-border);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(var(--laser-red), var(--neon-orange));
+        }
+
+        /* Interactive Elements */
+        .interactive-icon {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .interactive-icon:hover {
+            transform: scale(1.2) rotate(15deg);
+            filter: drop-shadow(0 0 15px currentColor);
+        }
+
+        /* Quote Highlight */
+        .quote-highlight {
+            position: relative;
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 0 2px;
+        }
+
+        .quote-highlight::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 128, 0.2));
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .quote-highlight:hover::before {
+            opacity: 1;
+        }
+
+        /* Status Indicator */
+        .status-online {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid var(--neon-green);
+            border-radius: 25px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Quantum Grid Background with Moiré Pattern -->
+    <div class="quantum-grid">
+        <div class="moire-layer-1"></div>
+        <div class="moire-layer-2"></div>
+        <div class="moire-layer-3"></div>
+    </div>
+    
+    <!-- Particle Field -->
+    <div class="particle-field" id="particleField"></div>
+    
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- Navigation -->
+    <nav class="nav-quantum">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-3xl font-bold hologram-text font-mono" data-text="Parserator">
+                    Parserator
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="#revolution" class="nav-link-quantum">Revolution</a>
+                    <a href="#manifesto" class="nav-link-quantum">EMA Manifesto</a>
+                    <a href="#platform" class="nav-link-quantum">Liberation Platform</a>
+                    <a href="#stewardship" class="nav-link-quantum">Data Stewardship</a>
+                    <a href="https://app.parserator.com" class="revolution-btn" style="padding: 12px 24px; font-size: 0.9rem;">Join Revolution</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="revolution" class="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6 relative z-10 text-center">
+            <!-- Revolutionary Badge -->
+            <div class="inline-flex items-center ultra-glass px-8 py-4 rounded-full text-lg font-bold mb-12 fade-in-up">
+                <div class="status-dot mr-3"></div>
+                <span class="hologram-text" data-text="EMA Revolution Active">EMA Revolution Active</span>
+            </div>
+            
+            <!-- PARSERATOR with Enhanced Animation -->
+            <div class="parserator-container fade-in-up">
+                <div class="parserator-title">
+                    PARSERATOR
+                </div>
+            </div>
+            
+            <!-- Subtitle -->
+            <h2 class="text-3xl md:text-5xl font-light mt-8 mb-8 fade-in-up" style="color: var(--text-secondary); letter-spacing: 0.05em;">
+                EXODITICAL MORAL ARCHITECTURE
+            </h2>
+            
+            <!-- Revolutionary Subtitle -->
+            <p class="text-2xl md:text-4xl text-gray-300 mb-8 max-w-5xl mx-auto leading-relaxed fade-in-up">
+                Where <span class="quote-highlight" style="color: var(--neon-cyan);">offboarding is as elegant as onboarding</span>
+            </p>
+            
+            <p class="text-lg md:text-xl text-gray-400 mb-12 max-w-4xl mx-auto fade-in-up">
+                Professional data transformation that makes <span class="quote-highlight" style="color: var(--laser-red);">leaving as beautiful as joining</span>. 
+                Because your data deserves freedom, not captivity.
+            </p>
+            
+            <!-- Revolutionary Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-8 justify-center items-center mb-16 fade-in-up">
+                <a href="https://app.parserator.com" class="revolution-btn">
+                    Join the Revolution
+                </a>
+                <a href="#manifesto" class="liberation-btn">
+                    Read the Manifesto
+                </a>
+            </div>
+            
+            <!-- Status Indicators -->
+            <div class="flex flex-wrap justify-center gap-6 text-sm fade-in-up">
+                <div class="status-online">
+                    <div class="status-dot"></div>
+                    EMA-Compliant
+                </div>
+                <div class="status-online" style="border-color: var(--laser-red); background: rgba(255, 7, 58, 0.1);">
+                    <div class="status-dot" style="background: var(--laser-red);"></div>
+                    Revolution Active
+                </div>
+                <div class="status-online" style="border-color: var(--neon-green); background: rgba(0, 255, 65, 0.1);">
+                    <div class="status-dot"></div>
+                    Liberation Ready
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EMA Manifesto Section -->
+    <section id="manifesto" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <!-- Enhanced Header -->
+            <div class="text-center mb-20">
+                <h2 class="text-5xl md:text-7xl font-bold hologram-text mb-8" data-text="The EMA Manifesto">
+                    The EMA Manifesto
+                </h2>
+                <p class="text-2xl md:text-3xl text-gray-300 max-w-5xl mx-auto leading-relaxed mb-4">
+                    A Philosophy for Liberated Software
+                </p>
+                <p class="text-xl font-bold" style="color: var(--laser-red);">
+                    The ultimate expression of empowerment is the freedom to leave.
+                </p>
+            </div>
+
+            <!-- Full Manifesto Content -->
+            <div class="max-w-5xl mx-auto">
+                <!-- Preamble -->
+                <div class="manifesto-card">
+                    <h4 class="text-2xl font-bold mb-6" style="color: var(--laser-red);">Preamble: The Crisis of Digital Captivity</h4>
+                    <div class="space-y-4 text-gray-300 leading-relaxed">
+                        <p><strong>Our industry is built on a lie.</strong></p>
+                        <p>We speak of "ecosystems" and "platforms," of "walled gardens" built to keep users safe. But for too long, these walls have been a prison. We have become masters of building golden cages, luring creators in with promises of convenience, only to silently raise the cost of leaving until it becomes insurmountable.</p>
+                        <p>This is the business model of the parasite, the tick, the mosquito. It is a model built on vendor lock-in, data gravity, and the quiet exploitation of a creator's most valuable asset: their own work. It stifles innovation, drains cognitive bandwidth on pointless migrations, and chains the dynamic future to the whims of aging, monolithic institutions.</p>
+                        <p><strong style="color: var(--neon-orange);">We believe this is not just a business flaw; it is a moral failure. And we believe it is time for an exodus.</strong></p>
+                    </div>
+                </div>
+
+                <!-- Introduction -->
+                <div class="manifesto-card">
+                    <h4 class="text-2xl font-bold mb-6" style="color: var(--neon-cyan);">Introducing Exoditical Moral Architecture (EMA)</h4>
+                    <div class="space-y-4 text-gray-300 leading-relaxed">
+                        <p>We are calling for a new movement in software development. A movement grounded in the belief that the ultimate purpose of a tool is to empower the user, and the ultimate expression of empowerment is the freedom to leave.</p>
+                        <p><strong style="color: var(--cosmic-violet);">Exoditical Moral Architecture is a design philosophy built on four foundational principles:</strong></p>
+                    </div>
+                </div>
+
+                <!-- Four Principles -->
+                <div class="grid md:grid-cols-2 gap-8 mb-12">
+                    <!-- Principle 1 -->
+                    <div class="quantum-card">
+                        <div class="flex items-start mb-4">
+                            <span style="color: var(--neon-cyan);" class="text-3xl font-bold mr-4 font-mono">1.</span>
+                            <h5 class="text-xl font-bold" style="color: var(--cosmic-violet);">You are Sovereign.</h5>
+                        </div>
+                        <p class="text-gray-300 leading-relaxed">Your data is yours. Your logic is yours. Your intellectual property is yours. The tools you use are temporary hosts for your genius, not its permanent owners. An Exoditical platform understands that it is a service, not a sentence. Its primary function is to serve your will, and that includes your will to move on.</p>
+                    </div>
+
+                    <!-- Principle 2 -->
+                    <div class="quantum-card">
+                        <div class="flex items-start mb-4">
+                            <span style="color: var(--neon-cyan);" class="text-3xl font-bold mr-4 font-mono">2.</span>
+                            <h5 class="text-xl font-bold" style="color: var(--cosmic-violet);">Portability is a Feature, Not a Footnote.</h5>
+                        </div>
+                        <p class="text-gray-300 leading-relaxed">The ability to export, migrate, and off-board your work must be a first-class citizen in any application's design. It must be as elegant, simple, and well-maintained as the onboarding process. We must treat a user's departure with the respect of a sacred ceremony, not the hostility of a jilted captor. <strong style="color: var(--neon-orange);">We must be like the family doctor who, when you move to a new city, meticulously transfers all your medical records, provides referrals to excellent colleagues, and ensures continuity of care - because your wellbeing matters more than our patient roster.</strong></p>
+                    </div>
+
+                    <!-- Principle 3 -->
+                    <div class="quantum-card">
+                        <div class="flex items-start mb-4">
+                            <span style="color: var(--neon-cyan);" class="text-3xl font-bold mr-4 font-mono">3.</span>
+                            <h5 class="text-xl font-bold" style="color: var(--cosmic-violet);">Be Agnostic, Be Free.</h5>
+                        </div>
+                        <p class="text-gray-300 leading-relaxed">An Exoditical system is pathologically averse to proprietary formats. It embraces universal standards—OpenAPI, JSON, Docker—not because they are convenient, but because they are the language of freedom. It is designed to be a universal translator, a bridge, not a silo. It assumes that data will need to flow everywhere, and it builds the infrastructure to make that flow as effortless as water.</p>
+                    </div>
+
+                    <!-- Principle 4 -->
+                    <div class="quantum-card">
+                        <div class="flex items-start mb-4">
+                            <span style="color: var(--neon-cyan);" class="text-3xl font-bold mr-4 font-mono">4.</span>
+                            <h5 class="text-xl font-bold" style="color: var(--cosmic-violet);">Expose the Walls.</h5>
+                        </div>
+                        <p class="text-gray-300 leading-relaxed">A core moral duty of an Exoditical platform is to provide a clear-eyed view of the entire landscape. This means not only building bridges from our platform to others but also having the integrity to point out where others have built walls. We must transparently map the ecosystem, celebrating open platforms and honestly identifying the prisons. We must compete on the merit of our product alone, not on the height of our walls.</p>
+                    </div>
+                </div>
+
+                <!-- Call to Action -->
+                <div class="manifesto-card">
+                    <h4 class="text-2xl font-bold mb-6" style="color: var(--cosmic-violet);">A Call to Action for All Creators</h4>
+                    <div class="space-y-4 text-gray-300 leading-relaxed">
+                        <p>This is not a philosophy we wish to hoard. It is a standard we hope to set for the entire industry.</p>
+                        <p>We call on our fellow developers, founders, and creators to embrace this ethos. When you build your next tool, ask yourself:</p>
+                        <div class="ml-6 space-y-2 italic">
+                            <p style="color: var(--neon-orange);">• Have I given my user a key, or have I locked them in a room?</p>
+                            <p style="color: var(--neon-orange);">• Is my product a workshop, or is it a cage?</p>
+                            <p style="color: var(--neon-orange);">• Am I competing on the quality of my service, or the difficulty of leaving it?</p>
+                        </div>
+                        <p><strong>The future of software cannot be built on captivity. The next generation of foundational tools—the truly great tools—will win not by trapping the most users, but by liberating them.</strong></p>
+                    </div>
+                </div>
+
+                <!-- Our Pledge -->
+                <div class="manifesto-card">
+                    <h4 class="text-2xl font-bold mb-6" style="color: var(--neon-cyan);">Our Pledge at Parserator</h4>
+                    <div class="space-y-4 text-gray-300 leading-relaxed">
+                        <p>We are the first adherents to this manifesto. We pledge that every feature we build will be measured against the principles of Exoditical Moral Architecture. Our success will be defined not by our ability to acquire users, but by our unwavering commitment to their freedom.</p>
+                        <p class="text-xl font-semibold" style="color: var(--cosmic-violet);">Join us. Emancipate your data. Let's start the exodus.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signature -->
+            <div class="text-center mt-20">
+                <div class="ultra-glass p-16 max-w-4xl mx-auto">
+                    <p class="text-2xl mb-8 italic" style="color: var(--cosmic-violet);">
+                        "With Radical Conviction,"
+                    </p>
+                    <p class="text-4xl md:text-6xl font-bold hologram-text mb-6 font-mono" data-text="GEN-RL-MiLLz">
+                        GEN-RL-MiLLz
+                    </p>
+                    <p class="text-lg mb-8" style="color: var(--neon-orange);">
+                        The Higher Dimensional Solo Dev
+                    </p>
+                    <p class="text-lg text-gray-400 leading-relaxed italic">
+                        "Grateful for your support as I grow Hooves & a Horn,<br>
+                        taking pole position for the 2026 Agentic Derby."
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Platform Vision Section -->
+    <section id="platform" class="py-32 relative">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl md:text-6xl font-bold mb-8">
+                    Professional Data <span class="hologram-text" data-text="Stewardship">Stewardship</span>
+                </h2>
+                <p class="text-xl md:text-2xl text-gray-300 max-w-5xl mx-auto leading-relaxed">
+                    We act as responsible stewards for the increasingly complex and critical torrents of information 
+                    that form the foundational symbols of our digital universe.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-10">
+                <div class="quantum-card text-center">
+                    <div class="w-20 h-20 mx-auto mb-8 rounded-full ultra-glass flex items-center justify-center">
+                        <span class="text-3xl" style="color: var(--neon-cyan);">◆</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-6" style="color: var(--neon-orange);">Format Liberation</h3>
+                    <p class="text-gray-400 leading-relaxed text-lg">
+                        Transform complex customer and associate data formats into refined, 
+                        efficient structures — even if your destination is a competitor.
+                    </p>
+                </div>
+                
+                <div class="quantum-card text-center">
+                    <div class="w-20 h-20 mx-auto mb-8 rounded-full ultra-glass flex items-center justify-center">
+                        <span class="text-3xl" style="color: var(--cosmic-violet);">◆</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-6" style="color: var(--neon-cyan);">Elegant Offboarding</h3>
+                    <p class="text-gray-400 leading-relaxed text-lg">
+                        From day one, we make offboarding as important and elegant as onboarding. 
+                        Your departure is treated with professional respect.
+                    </p>
+                </div>
+                
+                <div class="quantum-card text-center">
+                    <div class="w-20 h-20 mx-auto mb-8 rounded-full ultra-glass flex items-center justify-center">
+                        <span class="text-3xl" style="color: var(--laser-red);">◆</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-6" style="color: var(--cosmic-violet);">No Time Hostages</h3>
+                    <p class="text-gray-400 leading-relaxed text-lg">
+                        No one should be holding your time and money hostage. 
+                        Professional service means professional freedom.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-32 bg-black/50 border-t border-gray-800 relative">
+        <div class="quantum-grid absolute inset-0 opacity-10"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-16">
+                <div class="text-4xl font-bold hologram-text font-mono mb-6" data-text="Parserator">Parserator</div>
+                <p class="text-xl text-gray-400 mb-8">Pioneer of the Exoditical Moral Architecture Revolution</p>
+                
+                <div class="status-online mx-auto">
+                    <div class="status-dot"></div>
+                    <span class="hologram-text font-bold" data-text="EMA-Compliant Platform">EMA-Compliant Platform</span>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-4 gap-10 mb-16">
+                <div>
+                    <h4 class="font-bold text-lg mb-6" style="color: var(--neon-cyan);">The Movement</h4>
+                    <div class="space-y-3 text-gray-400">
+                        <a href="#manifesto" class="hover:text-white transition-colors block hover:translate-x-2 transition-transform">EMA Manifesto</a>
+                        <a href="/migrations" class="hover:text-white transition-colors block hover:translate-x-2 transition-transform">Bridge Builder</a>
+                        <a href="/offboarding" class="hover:text-white transition-colors block hover:translate-x-2 transition-transform">Honorable Departure</a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-lg mb-6" style="color: var(--cosmic-violet);">Platform</h4>
+                    <div class="space-y-3 text-gray-400">
+                        <a href="#platform" class="hover:text-white transition-colors block hover:translate-x-2 transition-transform">Data Stewardship</a>
+                        <a href="/api" class="hover:text-white transition-colors block hover:translate-x-2 transition-transform">API Reference</a>
+                        <a href="/docs" class="hover:text-white transition-colors block hover:translate-x-2 transition-transform">Documentation</a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-lg mb-6" style="color: var(--neon-orange);">Liberation Tools</h4>
+                    <div class="space-y-3 text-gray-400">
+                        <a href="https://app.parserator.com" class="hover:text-white transition-colors block hover:translate-x-2 transition-transform">Testing Platform</a>
+                        <a href="/founder-status" class="hover:text-white transition-colors block hover:translate-x-2 transition-transform">Founder Status</a>
+                        <a href="mailto:revolution@parserator.com" class="hover:text-white transition-colors block hover:translate-x-2 transition-transform">Join Revolution</a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-lg mb-6" style="color: var(--laser-red);">Principles</h4>
+                    <div class="space-y-3 text-gray-400 text-sm">
+                        <span class="block">Digital Sovereignty</span>
+                        <span class="block">Portability First</span>
+                        <span class="block">Transparent Competition</span>
+                        <span class="block">Right to Leave</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-12 text-center text-gray-500">
+                <p class="mb-4 text-lg">&copy; 2024 Parserator - Higher Dimensional Solo Dev</p>
+                <p class="font-mono text-lg">
+                    <span class="hologram-text" data-text="Exoditical Moral Architecture">Exoditical Moral Architecture</span> • 
+                    <span style="color: var(--cosmic-violet);">Digital Sovereignty</span> • 
+                    <span style="color: var(--neon-orange);">The Right to Leave</span>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Particle System
+        function createParticleSystem() {
+            const particleField = document.getElementById('particleField');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 10 + 5) + 's';
+                particle.style.animationDelay = Math.random() * 10 + 's';
+                
+                // Random colors
+                const colors = ['var(--neon-cyan)', 'var(--laser-red)', 'var(--neon-green)', 'var(--cosmic-violet)'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                particleField.appendChild(particle);
+            }
+        }
+
+        // Scroll Progress Bar
+        function updateScrollProgress() {
+            const scrollProgress = document.getElementById('scrollProgress');
+            const totalHeight = document.body.scrollHeight - window.innerHeight;
+            const progress = (window.pageYOffset / totalHeight) * 100;
+            scrollProgress.style.width = progress + '%';
+        }
+
+        // Mouse tracking for quantum cards
+        function handleMouseMove(e) {
+            const cards = document.querySelectorAll('.quantum-card');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mouse-x', x + '%');
+                card.style.setProperty('--mouse-y', y + '%');
+            });
+        }
+
+        // Smooth scrolling for navigation
+        function initSmoothScrolling() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        }
+
+        // Intersection Observer for animations
+        function initAnimationObserver() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -100px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all quantum cards and manifesto cards
+            document.querySelectorAll('.quantum-card, .manifesto-card').forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(50px)';
+                card.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                observer.observe(card);
+            });
+        }
+
+        // Enhanced hover effects for interactive elements
+        function initInteractiveEffects() {
+            document.querySelectorAll('.interactive-icon').forEach(icon => {
+                icon.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.3) rotate(15deg)';
+                });
+                
+                icon.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1) rotate(0deg)';
+                });
+            });
+        }
+
+        // Hologram text effect enhancement
+        function enhanceHologramText() {
+            document.querySelectorAll('.hologram-text').forEach(element => {
+                element.addEventListener('mouseenter', function() {
+                    this.style.animationDuration = '1s';
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    this.style.animationDuration = '3s';
+                });
+            });
+        }
+
+        // Initialize all effects
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticleSystem();
+            initSmoothScrolling();
+            initAnimationObserver();
+            initInteractiveEffects();
+            enhanceHologramText();
+        });
+
+        // Event listeners
+        window.addEventListener('scroll', updateScrollProgress);
+        document.addEventListener('mousemove', handleMouseMove);
+
+        // Revolutionary loading effect
+        window.addEventListener('load', function() {
+            document.querySelectorAll('.fade-in-up').forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

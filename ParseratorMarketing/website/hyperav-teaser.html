@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HyperAV - Audio Visualization Prototype | Parserator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            background: radial-gradient(circle at center, #0F0A1C 0%, #000 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            padding: 2rem;
+            text-align: center;
+            background: rgba(26, 27, 58, 0.3);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #00D9FF, #FF10F0, #00D9FF);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease-in-out infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #8892b0;
+            margin-bottom: 1rem;
+        }
+        
+        .prototype-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 217, 255, 0.2);
+            border: 1px solid #00D9FF;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 20px rgba(0, 217, 255, 0.3); }
+            50% { opacity: 0.7; box-shadow: 0 0 40px rgba(0, 217, 255, 0.6); }
+        }
+        
+        .demo-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        .demo-frame {
+            width: 100%;
+            max-width: 1200px;
+            height: 700px;
+            background: rgba(26, 27, 58, 0.4);
+            border: 2px solid rgba(0, 217, 255, 0.3);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .demo-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 18px;
+            background: #0a0a0f;
+        }
+        
+        .demo-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s;
+        }
+        
+        .demo-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .start-demo {
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, #00D9FF, #FF10F0);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+        }
+        
+        .start-demo:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.4);
+        }
+        
+        .demo-hint {
+            color: #8892b0;
+            text-align: center;
+            max-width: 400px;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            padding: 2rem;
+            text-align: center;
+            background: rgba(26, 27, 58, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .coming-soon {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #FF10F0;
+        }
+        
+        .description {
+            color: #8892b0;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .cta-section {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: rgba(255, 16, 240, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 16, 240, 0.2);
+        }
+        
+        .waitlist-btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: rgba(255, 16, 240, 0.2);
+            border: 2px solid #FF10F0;
+            border-radius: 10px;
+            color: #FF10F0;
+            text-decoration: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        
+        .waitlist-btn:hover {
+            background: rgba(255, 16, 240, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 16, 240, 0.3);
+        }
+        
+        .audio-reactive-demo {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .demo-frame {
+                height: 500px;
+            }
+            
+            .demo-container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>HyperAV</h1>
+        <div class="subtitle">Audio Visualization Prototype</div>
+        <div class="prototype-badge">Research Preview</div>
+    </div>
+    
+    <div class="demo-container">
+        <div class="demo-frame">
+            <canvas id="audio-canvas" class="demo-canvas"></canvas>
+            <div class="demo-overlay" id="demo-overlay">
+                <button class="start-demo" onclick="startAudioDemo()">
+                    🎵 Start Audio Demo
+                </button>
+                <div class="demo-hint">
+                    <strong>Enable your microphone</strong><br>
+                    Watch as sound transforms into 4D hypercube projections.<br>
+                    <em>This is just the beginning...</em>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div class="coming-soon">🔮 The Future of Data Visualization</div>
+        <div class="description">
+            You're experiencing a prototype of our revolutionary <strong>4D data visualization engine</strong>. 
+            What you see responding to audio is the same mathematical foundation that will soon transform 
+            how you see <em>any</em> data structure.
+            
+            <br><br>
+            
+            <strong>Imagine:</strong> Your JSON APIs as navigable 4D geometries. 
+            Your database schemas as rotating hypercubes. 
+            Your system logs as temporal 4D flows.
+            
+            <br><br>
+            
+            This is <strong>Polytopal Projection Processing (PPP)</strong> - 
+            the mathematical breakthrough that maps any data into higher-dimensional space, 
+            then projects it back for human comprehension.
+        </div>
+        
+        <div class="cta-section">
+            <div style="font-size: 1.2rem; margin-bottom: 1rem;">
+                <strong>Data visualization will never be the same.</strong>
+            </div>
+            <div style="color: #8892b0; margin-bottom: 1rem;">
+                Join the waitlist for early access to the full MVEP platform
+            </div>
+            <a href="mailto:parse@parserator.com?subject=MVEP Early Access Request" class="waitlist-btn">
+                Join Waitlist
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        // Simplified audio-reactive demo (derived from HyperAV)
+        let audioContext, analyser, microphone, dataArray;
+        let animationId;
+        let canvas, ctx;
+        let time = 0;
+        
+        window.onload = () => {
+            canvas = document.getElementById('audio-canvas');
+            ctx = canvas.getContext('2d');
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Start with static demo
+            staticDemo();
+        };
+        
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        
+        function staticDemo() {
+            time += 0.02;
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw 4D hypercube projection (static)
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const size = Math.min(width, height) * 0.2;
+            
+            // Simulate audio-reactive behavior
+            const fakeAudio = Math.sin(time) * 0.5 + 0.5;
+            const bass = Math.sin(time * 0.5) * 0.3 + 0.7;
+            const treble = Math.sin(time * 2) * 0.2 + 0.8;
+            
+            drawHypercube(centerX, centerY, size, bass, treble, fakeAudio);
+            
+            animationId = requestAnimationFrame(staticDemo);
+        }
+        
+        async function startAudioDemo() {
+            try {
+                // Get microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Setup audio context
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                microphone = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                
+                analyser.fftSize = 256;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                microphone.connect(analyser);
+                
+                // Hide overlay and start audio demo
+                document.getElementById('demo-overlay').classList.add('hidden');
+                
+                // Cancel static demo
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+                
+                audioReactiveDemo();
+                
+            } catch (error) {
+                console.error('Microphone access denied:', error);
+                alert('Microphone access required for audio demo. Continuing with simulated audio...');
+                document.getElementById('demo-overlay').classList.add('hidden');
+            }
+        }
+        
+        function audioReactiveDemo() {
+            time += 0.02;
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, width, height);
+            
+            let bass = 0.5, mid = 0.5, treble = 0.5;
+            
+            if (analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                
+                // Extract frequency bands
+                bass = getAverageVolume(dataArray, 0, 8) / 255;
+                mid = getAverageVolume(dataArray, 8, 32) / 255;
+                treble = getAverageVolume(dataArray, 32, 128) / 255;
+            } else {
+                // Fallback to simulated audio
+                bass = Math.sin(time * 0.5) * 0.3 + 0.7;
+                mid = Math.sin(time * 1.2) * 0.25 + 0.75;
+                treble = Math.sin(time * 2) * 0.2 + 0.8;
+            }
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const size = Math.min(width, height) * 0.15;
+            
+            drawHypercube(centerX, centerY, size, bass, mid, treble);
+            
+            animationId = requestAnimationFrame(audioReactiveDemo);
+        }
+        
+        function getAverageVolume(array, start, end) {
+            let sum = 0;
+            for (let i = start; i < end && i < array.length; i++) {
+                sum += array[i];
+            }
+            return sum / (end - start);
+        }
+        
+        function drawHypercube(centerX, centerY, size, bass, mid, treble) {
+            const vertices = generateHypercubeVertices(size);
+            const projected = project4Dto2D(vertices, bass, mid, treble);
+            
+            // Draw edges
+            ctx.strokeStyle = `hsl(${(time * 50) % 360}, 70%, ${50 + treble * 30}%)`;
+            ctx.lineWidth = 2 + bass * 3;
+            ctx.globalAlpha = 0.8;
+            
+            // Draw hypercube wireframe
+            const edges = getHypercubeEdges();
+            edges.forEach(edge => {
+                const start = projected[edge[0]];
+                const end = projected[edge[1]];
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX + start.x, centerY + start.y);
+                ctx.lineTo(centerX + end.x, centerY + end.y);
+                ctx.stroke();
+            });
+            
+            // Draw vertices
+            projected.forEach((vertex, i) => {
+                const hue = (i * 30 + time * 100) % 360;
+                ctx.fillStyle = `hsl(${hue}, 80%, ${60 + mid * 20}%)`;
+                ctx.globalAlpha = 0.9;
+                
+                ctx.beginPath();
+                ctx.arc(centerX + vertex.x, centerY + vertex.y, 3 + bass * 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw grid effect based on treble
+            if (treble > 0.3) {
+                drawGrid(centerX, centerY, size * 2, treble);
+            }
+        }
+        
+        function generateHypercubeVertices(size) {
+            const vertices = [];
+            for (let i = 0; i < 16; i++) {
+                vertices.push({
+                    x: (i & 1) ? size : -size,
+                    y: (i & 2) ? size : -size,
+                    z: (i & 4) ? size : -size,
+                    w: (i & 8) ? size : -size
+                });
+            }
+            return vertices;
+        }
+        
+        function project4Dto2D(vertices, bass, mid, treble) {
+            return vertices.map(v => {
+                // 4D rotations based on audio
+                const angleXW = time * 0.5 + bass * 2;
+                const angleYZ = time * 0.3 + mid * 1.5;
+                
+                // Rotate in 4D space
+                const cosXW = Math.cos(angleXW);
+                const sinXW = Math.sin(angleXW);
+                const cosYZ = Math.cos(angleYZ);
+                const sinYZ = Math.sin(angleYZ);
+                
+                // XW rotation
+                const x1 = v.x * cosXW - v.w * sinXW;
+                const w1 = v.x * sinXW + v.w * cosXW;
+                
+                // YZ rotation  
+                const y1 = v.y * cosYZ - v.z * sinYZ;
+                const z1 = v.y * sinYZ + v.z * cosYZ;
+                
+                // Project to 3D
+                const perspective = 2 / (3 - w1 * 0.001);
+                const x3d = x1 * perspective;
+                const y3d = y1 * perspective;
+                const z3d = z1 * perspective;
+                
+                // Project to 2D
+                const scale = 100 / (100 + z3d);
+                return {
+                    x: x3d * scale * (0.5 + treble * 0.5),
+                    y: y3d * scale * (0.5 + treble * 0.5)
+                };
+            });
+        }
+        
+        function getHypercubeEdges() {
+            // 4D hypercube has 32 edges
+            const edges = [];
+            for (let i = 0; i < 16; i++) {
+                for (let j = i + 1; j < 16; j++) {
+                    // Two vertices are connected if they differ in exactly one bit
+                    const diff = i ^ j;
+                    if ((diff & (diff - 1)) === 0) { // Check if diff is a power of 2
+                        edges.push([i, j]);
+                    }
+                }
+            }
+            return edges;
+        }
+        
+        function drawGrid(centerX, centerY, size, intensity) {
+            ctx.strokeStyle = `rgba(0, 217, 255, ${intensity * 0.3})`;
+            ctx.lineWidth = 1;
+            
+            const gridSize = 30;
+            const count = Math.floor(size / gridSize);
+            
+            for (let i = -count; i <= count; i++) {
+                ctx.beginPath();
+                ctx.moveTo(centerX - size, centerY + i * gridSize);
+                ctx.lineTo(centerX + size, centerY + i * gridSize);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX + i * gridSize, centerY - size);
+                ctx.lineTo(centerX + i * gridSize, centerY + size);
+                ctx.stroke();
+            }
+        }
+    </script>
+</body>
+</html>

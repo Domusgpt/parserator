@@ -1,0 +1,162 @@
+{
+  "name": "parserator",
+  "version": "1.0.0",
+  "description": "The structured data layer for AI agents - Built on Exoditical Moral Architecture principles",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "integrations/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "test:ema": "npm run test:ema --workspaces",
+    "test:ema:sovereignty": "npm run test:ema:sovereignty --workspaces",
+    "test:ema:portability": "npm run test:ema:portability --workspaces",
+    "test:ema:standards": "npm run test:ema:standards --workspaces",
+    "test:ema:competition": "npm run test:ema:competition --workspaces",
+    "test:unit": "jest --testPathPattern=unit",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:frameworks": "npm run test:framework:adk && npm run test:framework:mcp && npm run test:framework:langchain && npm run test:framework:crewai && npm run test:framework:autogpt",
+    "test:framework:adk": "jest --testPathPattern=frameworks/adk",
+    "test:framework:mcp": "jest --testPathPattern=frameworks/mcp",
+    "test:framework:langchain": "jest --testPathPattern=frameworks/langchain",
+    "test:framework:crewai": "jest --testPathPattern=frameworks/crewai",
+    "test:framework:autogpt": "jest --testPathPattern=frameworks/autogpt",
+    "test:export:complete": "jest --testPathPattern=export/complete",
+    "test:export:performance": "jest --testPathPattern=export/performance",
+    "test:migration:competitors": "jest --testPathPattern=migration/competitors",
+    "test:formats:portability": "jest --testPathPattern=formats/portability",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . --ext .ts,.js",
+    "format": "prettier --write .",
+    "docs:api": "typedoc --out docs/api src",
+    "docs:ema": "node scripts/build-ema-docs.js",
+    "docs:migration": "node scripts/build-migration-docs.js",
+    "docs:linkcheck": "node scripts/check-links.js",
+    "examples:validate": "node scripts/validate-examples.js",
+    "ema:report": "node scripts/generate-ema-report.js",
+    "ema:registry:update": "node scripts/update-ema-registry.js",
+    "benchmark:parsing": "node benchmarks/parsing.js",
+    "benchmark:export": "node benchmarks/export.js",
+    "benchmark:frameworks": "node benchmarks/frameworks.js",
+    "benchmark:report": "node benchmarks/generate-report.js",
+    "report:migration:compatibility": "node scripts/migration-compatibility-report.js",
+    "build:mcp": "npm run build -w packages/mcp-server",
+    "build:sdks": "npm run build -w packages/python-sdk && npm run build -w packages/javascript-sdk",
+    "package": "node scripts/package-for-distribution.js",
+    "publish:packages": "npm run publish --workspaces",
+    "dev": "npm run dev --workspaces --if-present",
+    "clean": "rimraf dist coverage *.tgz && npm run clean --workspaces --if-present",
+    "prepare": "husky install"
+  },
+  "keywords": [
+    "ai-agents",
+    "data-parsing",
+    "structured-data",
+    "ema-compliant",
+    "digital-sovereignty",
+    "data-portability",
+    "vendor-agnostic",
+    "adk",
+    "mcp",
+    "langchain",
+    "crewai",
+    "autogpt",
+    "machine-learning",
+    "artificial-intelligence",
+    "nlp",
+    "data-extraction",
+    "json-schema",
+    "api-integration",
+    "developer-tools"
+  ],
+  "author": {
+    "name": "GEN-RL-MiLLz",
+    "email": "phillips.paul.email@gmail.com",
+    "url": "https://github.com/domusgpt"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Domusgpt/parserator.git"
+  },
+  "homepage": "https://parserator.com",
+  "bugs": {
+    "url": "https://github.com/Domusgpt/parserator/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-jest": "^27.0.0",
+    "husky": "^8.0.0",
+    "jest": "^29.7.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.0",
+    "ts-jest": "^29.1.0",
+    "typedoc": "^0.25.0",
+    "typescript": "^5.2.0"
+  },
+  "ema": {
+    "compliance": {
+      "digitalSovereignty": {
+        "userDataOwnership": true,
+        "exportCapability": "complete",
+        "apiAccess": "unrestricted",
+        "dataRetention": "user-controlled"
+      },
+      "portabilityFirst": {
+        "migrationTools": "automated",
+        "standardFormats": "universal",
+        "documentation": "complete",
+        "exportFormats": ["json", "csv", "yaml", "xml", "openapi"]
+      },
+      "standardsAgnosticism": {
+        "apiSpecification": "openapi",
+        "dataFormats": "standard",
+        "integration": "universal",
+        "protocols": ["http", "websocket", "mcp", "grpc"]
+      },
+      "transparentCompetition": {
+        "wallOfOpenness": "public",
+        "migrationSupport": "active",
+        "comparisonMatrix": "honest",
+        "competitorIntegration": "supported"
+      }
+    },
+    "certification": {
+      "level": "pioneer",
+      "verified": true,
+      "lastAudit": "2025-06-07",
+      "nextReview": "2025-03-11"
+    },
+    "movement": {
+      "founder": true,
+      "manifesto": "docs/EMA_WHITE_PAPER.md",
+      "principles": "https://parserator.com/ema-principles",
+      "community": "https://discord.gg/parserator"
+    }
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{md,json}": [
+      "prettier --write"
+    ]
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/domusgpt"
+  }
+}

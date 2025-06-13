@@ -1,0 +1,14 @@
+{
+  "name": "Email Contact Extractor",
+  "description": "Extract contact information from any email",
+  "schema": {
+    "sender_name": "string",
+    "sender_email": "email",
+    "sender_company": "string",
+    "phone_numbers": "string_array",
+    "meeting_time": "datetime",
+    "action_items": "string_array",
+    "attachments": "string_array"
+  },
+  "example_input": "From: sarah@techcorp.com\nSubject: Partnership Discussion\n\nHi there,\n\nI'm Sarah Johnson, VP of Business Development at TechCorp. I'd love to discuss a potential partnership. Can we meet next Tuesday at 2pm?\n\nPlease review the attached proposal.\n\nBest regards,\nSarah\n(555) 123-4567"
+}
