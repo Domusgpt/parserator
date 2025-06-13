@@ -1,0 +1,185 @@
+name: parserator-data-transformer
+version: 1.0.0
+specVersion: v1beta
+
+displayName: Parserator Data Transformer
+description: >-
+  Transform unstructured data into structured JSON using Parserator's AI-powered parsing.
+  Perfect for processing user uploads, documents, and any unstructured data in your Firebase project.
+
+license: MIT
+sourceUrl: https://github.com/parserator/firebase-extension
+releaseNotesUrl: https://github.com/parserator/firebase-extension/releases
+
+author:
+  authorName: Parserator
+  url: https://parserator.com
+
+contributors:
+  - authorName: GEN-RL-MiLLz
+    url: https://github.com/parserator
+
+billingRequired: true
+
+externalServices:
+  - name: Parserator API
+    pricingUri: https://parserator.com/pricing
+
+apis:
+  - apiName: firestore.googleapis.com
+    reason: Reads from and writes to Firestore to process document data
+
+roles:
+  - role: datastore.user
+    reason: Allows the extension to read and write document data in Firestore
+
+resources:
+  - name: parseData
+    type: firebaseextensions.v1beta.function
+    description: >-
+      Processes documents added to the specified collection and transforms
+      unstructured data using Parserator API
+    properties:
+      location: ${param:LOCATION}
+      runtime: nodejs18
+      eventTrigger:
+        eventType: providers/cloud.firestore/eventTypes/document.create
+        resource: projects/${param:PROJECT_ID}/databases/(default)/documents/${param:COLLECTION_PATH}/{documentId}
+
+params:
+  - param: LOCATION
+    label: Cloud Functions location
+    description: >-
+      Where do you want to deploy the functions created for this extension?
+      For help selecting a location, refer to the [location selection guide](https://firebase.google.com/docs/functions/locations).
+    type: select
+    options:
+      - label: Iowa (us-central1)
+        value: us-central1
+      - label: South Carolina (us-east1)
+        value: us-east1
+      - label: Northern Virginia (us-east4)
+        value: us-east4
+      - label: Oregon (us-west1)
+        value: us-west1
+      - label: Los Angeles (us-west2)
+        value: us-west2
+      - label: Salt Lake City (us-west3)
+        value: us-west3
+      - label: Las Vegas (us-west4)
+        value: us-west4
+      - label: Belgium (europe-west1)
+        value: europe-west1
+      - label: London (europe-west2)
+        value: europe-west2
+      - label: Frankfurt (europe-west3)
+        value: europe-west3
+      - label: Zurich (europe-west6)
+        value: europe-west6
+      - label: Taiwan (asia-east1)
+        value: asia-east1
+      - label: Hong Kong (asia-east2)
+        value: asia-east2
+      - label: Tokyo (asia-northeast1)
+        value: asia-northeast1
+      - label: Osaka (asia-northeast2)
+        value: asia-northeast2
+      - label: Seoul (asia-northeast3)
+        value: asia-northeast3
+      - label: Mumbai (asia-south1)
+        value: asia-south1
+      - label: Singapore (asia-southeast1)
+        value: asia-southeast1
+      - label: Jakarta (asia-southeast2)
+        value: asia-southeast2
+      - label: Montreal (northamerica-northeast1)
+        value: northamerica-northeast1
+      - label: Sao Paulo (southamerica-east1)
+        value: southamerica-east1
+      - label: Sydney (australia-southeast1)
+        value: australia-southeast1
+    default: us-central1
+    required: true
+    immutable: true
+
+  - param: PARSERATOR_API_KEY
+    label: Parserator API Key
+    description: >-
+      Your Parserator API key. Get one at https://parserator.com/signup
+    type: secret
+    required: true
+
+  - param: COLLECTION_PATH
+    label: Collection path
+    description: >-
+      The path to the collection that contains the documents to process.
+    example: rawData
+    validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
+    validationErrorMessage: Must be a valid Cloud Firestore Collection
+    default: rawData
+    required: true
+
+  - param: INPUT_FIELD
+    label: Input field name
+    description: >-
+      The name of the field in your documents that contains the unstructured text to parse.
+    example: rawText
+    default: rawText
+    required: true
+
+  - param: SCHEMA_FIELD
+    label: Schema field name (optional)
+    description: >-
+      The name of the field that contains the desired output schema. If not provided, 
+      Parserator will auto-detect the best schema.
+    example: schema
+    default: schema
+    required: false
+
+  - param: OUTPUT_COLLECTION
+    label: Output collection path
+    description: >-
+      The path to the collection where parsed results will be stored.
+    example: parsedData
+    validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
+    validationErrorMessage: Must be a valid Cloud Firestore Collection
+    default: parsedData
+    required: true
+
+  - param: PRESERVE_ORIGINAL
+    label: Preserve original document
+    description: >-
+      Should the original document be preserved? If false, it will be deleted after processing.
+    type: select
+    options:
+      - label: Yes, preserve the original document
+        value: "true"
+      - label: No, delete after processing
+        value: "false"
+    default: "true"
+    required: true
+
+  - param: ERROR_COLLECTION
+    label: Error collection path (optional)
+    description: >-
+      The path to the collection where failed parsing attempts will be logged.
+      Leave empty to disable error logging.
+    example: parseErrors
+    validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
+    validationErrorMessage: Must be a valid Cloud Firestore Collection
+    required: false
+
+events:
+  - type: firebase.extensions.parserator-data-transformer.v1.complete
+    description: Occurs when a document has been successfully parsed
+
+lifecycleEvents:
+  onInstall:
+    function: setupParserator
+    processingMessage: Setting up Parserator integration...
+  onUpdate:
+    function: updateParserator
+    processingMessage: Updating Parserator configuration...
+  onConfigure:
+    function: configureParserator
+    processingMessage: Configuring Parserator settings...
