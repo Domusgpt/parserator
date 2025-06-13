@@ -1,0 +1,105 @@
+name: 💡 Feature Request
+description: Suggest a new feature or enhancement for Parserator
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! We appreciate your input to make Parserator better.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component would this feature affect?
+      options:
+        - Core API
+        - Chrome Extension
+        - VS Code Extension
+        - Python SDK
+        - Node.js SDK
+        - MCP Server
+        - Documentation
+        - Website
+        - New Component
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What's the use case?
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: What would you like to happen? How should this feature work?
+      placeholder: "I would like to be able to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: What alternatives have you considered?
+      placeholder: "Other ways to solve this could be..."
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example Usage
+      description: If applicable, provide an example of how this feature would be used
+      placeholder: |
+        ```python
+        # Example code or usage scenario
+        parserator.new_feature(input_data, options={...})
+        ```
+      render: markdown
+
+  - type: checkboxes
+    id: ema-compliance
+    attributes:
+      label: EMA Compliance
+      description: Does this feature align with Exoditical Moral Architecture principles?
+      options:
+        - label: This feature supports digital sovereignty (user data ownership)
+        - label: This feature supports portability (export/migration capabilities)
+        - label: This feature uses universal standards (not proprietary formats)
+        - label: This feature supports transparent competition (open approach)
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve my workflow
+        - High - Blocking my use case
+        - Critical - Can't use Parserator without this
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, mockups, or examples about the feature
+      placeholder: Any additional information that would help us understand your request
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

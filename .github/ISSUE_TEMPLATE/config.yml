@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 General Questions & Discussions
+    url: https://github.com/domusgpt/parserator/discussions
+    about: Ask questions, share ideas, and discuss Parserator with the community
+  - name: 📧 Direct Support
+    url: mailto:Gen-rl-millz@parserator.com
+    about: Contact us directly for beta access, partnerships, or private support
+  - name: 📚 Documentation
+    url: https://parserator.com
+    about: Check our website and documentation for API references and guides
+  - name: 🔗 Join Beta Program
+    url: mailto:Gen-rl-millz@parserator.com?subject=Beta%20Access%20Request&body=Please%20include%3A%0A-%20Your%20use%20case%0A-%20Which%20frameworks%20you%27re%20working%20with%0A-%20Your%20experience%20level
+    about: Request early access to beta features and integrations

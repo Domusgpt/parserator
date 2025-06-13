@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linter
+      run: npm run lint
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Run build
+      run: npm run build
+
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run security audit
+      run: npm audit --audit-level=moderate
+
+  validate-ema:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Validate EMA Compliance
+      run: |
+        echo "🔍 Checking EMA Compliance..."
+        
+        # Check for export capabilities in documentation
+        if grep -r "export" README.md CONTRIBUTING.md; then
+          echo "✅ Export capabilities documented"
+        else
+          echo "❌ Export capabilities not documented"
+          exit 1
+        fi
+        
+        # Check for vendor lock-in language
+        if grep -ri "vendor.lock" README.md; then
+          echo "✅ Vendor lock-in addressed"
+        else
+          echo "⚠️ Consider mentioning vendor lock-in stance"
+        fi
+        
+        # Check for open standards mention
+        if grep -ri "open.standard\|universal.standard" README.md; then
+          echo "✅ Open standards mentioned"
+        else
+          echo "⚠️ Consider mentioning open standards"
+        fi
+        
+        echo "🎯 EMA compliance check completed"

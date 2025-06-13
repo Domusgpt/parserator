@@ -1,10 +1,19 @@
 {
   "name": "parserator",
   "version": "1.0.0",
-  "private": true,
-  "description": "Intelligent data parsing for agentic workflows - SDK/ADK/MCP toolkit",
+  "private": false,
+  "description": "The Structured Data Layer for AI Agents - Transform any unstructured input into agent-ready JSON with 95% accuracy",
   "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
-  "license": "PRIVATE",
+  "license": "MIT",
+  "homepage": "https://parserator.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/domusgpt/parserator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/domusgpt/parserator/issues",
+    "email": "Gen-rl-millz@parserator.com"
+  },
   "workspaces": [
     "packages/*"
   ],
@@ -32,16 +41,35 @@
     "npm": ">=9.0.0"
   },
   "keywords": [
-    "parsing",
-    "llm",
     "ai",
-    "agents",
-    "gemini",
-    "mcp",
-    "sdk",
-    "adk",
+    "parsing",
+    "json",
     "data-extraction",
-    "unstructured-data"
+    "structured-data",
+    "llm",
+    "agents",
+    "ai-agents",
+    "data-parsing",
+    "unstructured-data",
+    "text-processing",
+    "mcp",
+    "langchain",
+    "crewai",
+    "google-adk",
+    "sdk",
+    "api",
+    "machine-learning",
+    "nlp",
+    "automation",
+    "data-transformation",
+    "chrome-extension",
+    "vscode-extension",
+    "ema",
+    "exoditical-moral-architecture",
+    "digital-sovereignty",
+    "data-liberation",
+    "no-vendor-lock-in",
+    "open-standards"
   ],
   "packageManager": "npm@9.8.1"
 }
