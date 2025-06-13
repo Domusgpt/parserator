@@ -3,7 +3,7 @@
   "name": "Parserator",
   "version": "1.0.0",
   "description": "Transform unstructured text into structured JSON using AI-powered parsing",
-  "author": "Paul Phillips <phillips.paul.email@gmail.com>",
+  "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
   
   "permissions": [
     "storage",

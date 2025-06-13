@@ -1,349 +1,405 @@
-# Parserator Data Transformer Firebase Extension
+# 🤖 Parserator
 
-Transform unstructured data into structured JSON automatically using Parserator's AI-powered parsing engine. Perfect for processing user uploads, documents, emails, and any unstructured data in your Firebase project.
+**The Structured Data Layer for AI Agents**
 
-## 🚀 What This Extension Does
+[![npm version](https://img.shields.io/npm/v/parserator.svg)](https://www.npmjs.com/package/parserator)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![EMA Compliant](https://img.shields.io/badge/EMA-Compliant-green.svg)](#exoditical-moral-architecture)
 
-This extension listens to a Firestore collection you specify and automatically transforms any unstructured text data into structured JSON using Parserator's advanced Architect-Extractor pattern.
-
-### Key Features
-
-- **🤖 AI-Powered Parsing**: 95% accuracy across 16+ industries
-- **⚡ Real-time Processing**: Automatic triggers on document creation
-- **🔧 Flexible Schema**: Auto-detection or custom schema definition
-- **📊 Analytics**: Built-in processing statistics and monitoring
-- **🛡️ Error Handling**: Comprehensive error logging and recovery
-- **🎯 EMA Compliant**: No vendor lock-in, full data sovereignty
-
-## 📋 Use Cases
-
-### Document Processing
-- **Invoices** → Structured billing data
-- **Receipts** → Expense tracking records
-- **Contracts** → Key terms and dates
-- **Resumes** → Candidate information
-
-### User-Generated Content
-- **Contact Forms** → CRM records
-- **Support Tickets** → Issue categorization
-- **Survey Responses** → Structured feedback
-- **Chat Messages** → Intent detection
-
-### Data Migration
-- **Legacy Systems** → Modern database formats
-- **CSV Files** → Normalized JSON
-- **API Responses** → Consistent schemas
-- **Web Scraping** → Structured datasets
-
-## 🛠️ How It Works
-
-```mermaid
-graph LR
-    A[Document Added] --> B[Extension Triggered]
-    B --> C[Extract Text Field]
-    C --> D[Call Parserator API]
-    D --> E[Store Parsed Result]
-    E --> F[Optional: Delete Original]
-    D --> G[Error Collection] 
-```
-
-1. **Document Creation**: User adds document to monitored collection
-2. **Automatic Processing**: Extension extracts specified text field
-3. **AI Parsing**: Parserator API transforms unstructured text to JSON
-4. **Result Storage**: Parsed data saved to output collection
-5. **Analytics**: Processing metrics tracked for optimization
-
-## 📦 Installation
-
-### Prerequisites
-
-- Firebase project with Firestore enabled
-- Billing enabled (required for extensions)
-- Parserator API key ([Get one here](https://parserator.com/signup))
-
-### Install from Firebase Console
-
-1. Go to [Firebase Extensions](https://console.firebase.google.com/project/_/extensions)
-2. Search for "Parserator Data Transformer"
-3. Click **Install** and follow the configuration steps
-
-### Install via Firebase CLI
-
-```bash
-firebase ext:install parserator/data-transformer --project=your-project-id
-```
-
-## ⚙️ Configuration
-
-### Required Parameters
-
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| **Parserator API Key** | Your API key from parserator.com | `pk_live_...` |
-| **Collection Path** | Firestore collection to monitor | `rawData` |
-| **Input Field** | Field containing unstructured text | `rawText` |
-| **Output Collection** | Where to store parsed results | `parsedData` |
-
-### Optional Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| **Schema Field** | Field containing desired output schema | `schema` |
-| **Preserve Original** | Keep original documents after processing | `true` |
-| **Error Collection** | Collection for error logging | `parseErrors` |
-
-## 📝 Usage Examples
-
-### Basic Document Processing
-
-```javascript
-// Add a document to trigger parsing
-await db.collection('rawData').add({
-  rawText: "Invoice #12345 from Acme Corp for $1,250.00 due 2024-01-15",
-  customerEmail: "john@example.com"
-});
-
-// Result automatically appears in 'parsedData' collection:
-{
-  originalDocumentId: "doc123",
-  parsedData: {
-    invoiceNumber: "12345",
-    company: "Acme Corp", 
-    amount: 1250.00,
-    currency: "USD",
-    dueDate: "2024-01-15"
-  },
-  accuracy: 0.98,
-  timestamp: "2024-01-10T10:30:00Z"
-}
-```
-
-### Custom Schema Processing
-
-```javascript
-// Add document with custom schema
-await db.collection('rawData').add({
-  rawText: "Dr. Sarah Johnson called about patient follow-up",
-  schema: {
-    doctorName: "string",
-    patientAction: "string", 
-    urgency: "low|medium|high"
-  }
-});
-
-// Parsed result follows your schema:
-{
-  parsedData: {
-    doctorName: "Dr. Sarah Johnson",
-    patientAction: "follow-up call",
-    urgency: "medium"
-  },
-  schema: { /* original schema */ },
-  accuracy: 0.95
-}
-```
-
-### Real-time Processing with React
-
-```javascript
-import { collection, onSnapshot } from 'firebase/firestore';
-
-// Listen for parsed results
-const unsubscribe = onSnapshot(
-  collection(db, 'parsedData'),
-  (snapshot) => {
-    snapshot.docChanges().forEach((change) => {
-      if (change.type === 'added') {
-        const result = change.doc.data();
-        console.log('New parsed data:', result.parsedData);
-        
-        // Update your UI with structured data
-        updateUI(result.parsedData);
-      }
-    });
-  }
-);
-```
-
-## 📊 Monitoring & Analytics
-
-### Built-in Analytics
-
-The extension provides built-in analytics accessible via Cloud Functions:
-
-```javascript
-// Get processing statistics
-const analytics = await functions().httpsCallable('getAnalytics')();
-
-console.log(analytics.data);
-// {
-//   totalDocuments: 1250,
-//   totalErrors: 23,
-//   successRate: 0.982,
-//   averageAccuracy: 0.951,
-//   averageProcessingTime: 2.3,
-//   period: "30 days"
-// }
-```
-
-### Health Check Endpoint
-
-Monitor extension health:
-
-```bash
-curl https://your-region-your-project.cloudfunctions.net/ext-parserator-data-transformer-healthCheck
-```
-
-### Error Monitoring
-
-If you configure an error collection, failed parsing attempts are logged:
-
-```javascript
-// Monitor errors
-const errors = await db.collection('parseErrors')
-  .orderBy('timestamp', 'desc')
-  .limit(10)
-  .get();
-
-errors.forEach(doc => {
-  const error = doc.data();
-  console.log(`Error: ${error.error}`);
-  console.log(`Input: ${error.inputData.substring(0, 100)}...`);
-});
-```
-
-## 🔧 Advanced Configuration
-
-### Firestore Security Rules
-
-Ensure proper access control:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Allow reads/writes to input collection
-    match /rawData/{document} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Allow reads from output collection
-    match /parsedData/{document} {
-      allow read: if request.auth != null;
-    }
-    
-    // Restrict error collection to admins
-    match /parseErrors/{document} {
-      allow read: if request.auth.token.admin == true;
-    }
-  }
-}
-```
-
-### Custom Processing Logic
-
-For advanced use cases, you can extend the extension:
-
-```javascript
-// Listen for completion events
-const unsubscribe = onSnapshot(
-  collection(db, '_parserator_events'),
-  (snapshot) => {
-    snapshot.docChanges().forEach(async (change) => {
-      if (change.type === 'added') {
-        const event = change.doc.data();
-        
-        // Custom post-processing
-        if (event.data.accuracy < 0.8) {
-          // Flag for manual review
-          await flagForReview(event.documentId);
-        }
-        
-        // Trigger downstream processes
-        await triggerWorkflow(event.documentId);
-      }
-    });
-  }
-);
-```
-
-## 💰 Pricing
-
-### Extension Costs
-- **Firebase Functions**: Pay per invocation (~$0.0000004 per parse)
-- **Firestore**: Standard read/write costs
-- **Parserator API**: See [pricing page](https://parserator.com/pricing)
-
-### Cost Optimization Tips
-1. **Batch Processing**: Group multiple texts in single documents
-2. **Schema Reuse**: Define schemas once and reference them
-3. **Error Handling**: Monitor and fix common parsing issues
-4. **Cleanup**: Use `preserveOriginal: false` for one-time processing
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-**Extension not triggering:**
-- Check Firestore security rules
-- Verify collection path configuration
-- Ensure documents have the specified input field
-
-**API errors:**
-- Verify Parserator API key is correct
-- Check API quota limits
-- Review error collection for specific messages
-
-**Low accuracy results:**
-- Provide custom schema for better results
-- Ensure input text is clean and readable
-- Check for character encoding issues
-
-**Performance issues:**
-- Monitor function timeout limits (default: 60s)
-- Consider batch processing for large documents
-- Review concurrent execution limits
-
-### Debug Mode
-
-Enable detailed logging:
-
-```bash
-# Deploy with debug logging
-firebase functions:config:set parserator.debug=true
-firebase deploy --only functions
-```
-
-### Support
-
-- **Documentation**: [parserator.com/docs](https://parserator.com/docs)
-- **Community**: [Discord](https://parserator.com/discord)
-- **Issues**: [GitHub](https://github.com/parserator/firebase-extension/issues)
-- **Email**: support@parserator.com
-
-## 🚀 What's Next?
-
-### Roadmap
-- [ ] **Batch Processing**: Handle multiple documents simultaneously
-- [ ] **Real-time Streaming**: WebSocket-based real-time results
-- [ ] **Custom Models**: Train models on your specific data
-- [ ] **Data Validation**: Automatic quality checks and corrections
-- [ ] **Workflow Integration**: Zapier, n8n, and workflow automation
-
-### Contributing
-
-We welcome contributions! This extension is part of the Exoditical Moral Architecture movement - we believe in user sovereignty and the right to leave.
-
-- **Open Source**: Full source code available
-- **Portable**: Export all your data anytime
-- **Transparent**: No hidden fees or lock-in mechanisms
-
-## 📄 License
-
-MIT License - Use freely in commercial and personal projects.
+Transform any unstructured input into agent-ready JSON with 95% accuracy. Built for Google ADK, MCP, LangChain, and any agent framework using our revolutionary two-stage Architect-Extractor pattern.
 
 ---
 
-**Built with ❤️ by the Parserator team**
+## 🚀 **Quick Start**
 
-*The ultimate expression of empowerment is the freedom to leave.*
+### Install & Use in 30 seconds
+
+```bash
+# Install globally
+npm install -g parserator
+
+# Parse any text instantly
+parserator parse "Contact: John Doe, Email: john@example.com, Phone: 555-0123"
+```
+
+**Output:**
+```json
+{
+  "contact": "John Doe",
+  "email": "john@example.com", 
+  "phone": "555-0123"
+}
+```
+
+### Get API Access
+```bash
+# Get your free API key
+curl -X POST https://parserator.com/api/keys/generate \
+  -H "Content-Type: application/json" \
+  -d '{"email": "your@email.com"}'
+```
+
+---
+
+## 🔧 **Agent Integrations**
+
+### Google ADK
+```python
+@agent.tool
+def extract_user_intent(user_message: str) -> UserIntent:
+    return parse_for_agent(
+        text=user_message,
+        schema=UserIntent,
+        context="command_parsing"
+    )
+```
+
+### MCP Server (Universal)
+```bash
+# Install MCP server for any agent
+npm install -g parserator-mcp-server
+
+# Use in any MCP-compatible agent
+mcp://parserator/parse?schema=Contact&text=email_content
+```
+
+### LangChain
+```python
+from parserator import ParseChain
+
+parser = ParseChain(api_key="your_key")
+result = parser.parse(
+    text="messy data here",
+    output_schema={"name": "string", "age": "number"}
+)
+```
+
+### CrewAI
+```python
+from parserator.integrations.crewai import ParseratorTool
+
+parse_tool = ParseratorTool(
+    name="extract_data",
+    description="Parse unstructured text into JSON"
+)
+```
+
+---
+
+## ⚡ **Browser Extensions**
+
+Transform web data instantly while browsing:
+
+### Chrome Extension
+- **Install**: [Chrome Web Store](https://chrome.google.com/webstore)
+- **Use**: Right-click any text → "Parse with Parserator" → Perfect JSON
+- **Features**: Auto-detect schemas, bulk export, local processing
+
+### VS Code Extension  
+- **Install**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=parserator.parserator)
+- **Use**: Select messy data → Ctrl+Shift+P → Generate TypeScript types
+- **Features**: Schema templates, batch processing, framework integration
+
+---
+
+## 🧠 **How It Works: Architect-Extractor Pattern**
+
+Traditional LLMs waste tokens on complex reasoning with large datasets. Parserator uses a **two-stage approach**:
+
+### Stage 1: The Architect (Planning)
+- **Input**: Your schema + small data sample (~1K chars)
+- **Job**: Create detailed extraction plan
+- **LLM**: Gemini 1.5 Flash (optimized for reasoning)
+- **Output**: Structured search instructions
+
+### Stage 2: The Extractor (Execution)  
+- **Input**: Full dataset + extraction plan
+- **Job**: Execute plan with minimal thinking
+- **LLM**: Gemini 1.5 Flash (optimized for following instructions)
+- **Output**: Clean, validated JSON
+
+### Results
+- **70% token reduction** vs single-LLM approaches
+- **95% accuracy** on complex data
+- **Sub-3 second** response times
+- **No vendor lock-in** - works with any LLM provider
+
+---
+
+## 📦 **Installation Options**
+
+### 🔹 **Node.js/TypeScript**
+```bash
+npm install parserator
+```
+
+### 🔹 **Python**
+```bash
+pip install parserator
+```
+
+### 🔹 **Browser Extensions**
+- [Chrome Extension](https://chrome.google.com/webstore) - Right-click parsing
+- [VS Code Extension](https://marketplace.visualstudio.com) - Developer workflow
+
+### 🔹 **Agent Frameworks**
+```bash
+# MCP Server (Universal)
+npm install -g parserator-mcp-server
+
+# LangChain Integration
+pip install parserator[langchain]
+
+# CrewAI Integration  
+pip install parserator[crewai]
+
+# Google ADK Integration
+pip install parserator[adk]
+```
+
+---
+
+## 🌟 **Use Cases**
+
+### **For Developers**
+- **API Integration**: Parse inconsistent API responses
+- **Data Migration**: Extract from legacy systems
+- **ETL Pipelines**: Intelligent data transformation
+- **Web Scraping**: Handle changing site layouts
+
+### **For AI Agents**
+- **Email Processing**: Extract tasks, contacts, dates
+- **Document Analysis**: Parse contracts, invoices, reports
+- **User Commands**: Convert natural language to structured actions
+- **Research Workflows**: Extract key info from papers, articles
+
+### **For Data Teams**
+- **Log Analysis**: Structure unstructured log files
+- **Data Cleaning**: Normalize messy datasets
+- **Import Processing**: Handle varied file formats
+- **Quality Assurance**: Validate data consistency
+
+---
+
+## 🏗️ **API Reference**
+
+### **Core Endpoint**
+```http
+POST https://api.parserator.com/v1/parse
+Content-Type: application/json
+Authorization: Bearer YOUR_API_KEY
+
+{
+  "inputData": "Contact: John Doe, Email: john@example.com, Phone: 555-0123",
+  "outputSchema": {
+    "contact": "string",
+    "email": "string", 
+    "phone": "string"
+  },
+  "instructions": "Extract contact information"
+}
+```
+
+### **Response**
+```json
+{
+  "success": true,
+  "parsedData": {
+    "contact": "John Doe",
+    "email": "john@example.com",
+    "phone": "555-0123"
+  },
+  "metadata": {
+    "confidence": 0.96,
+    "tokensUsed": 1250,
+    "processingTimeMs": 800
+  }
+}
+```
+
+### **SDK Examples**
+
+#### **JavaScript/TypeScript**
+```javascript
+import { Parserator } from 'parserator';
+
+const parser = new Parserator('your-api-key');
+
+const result = await parser.parse({
+  inputData: 'messy text here',
+  outputSchema: { name: 'string', age: 'number' }
+});
+
+console.log(result.parsedData);
+```
+
+#### **Python**
+```python
+from parserator import Parserator
+
+parser = Parserator('your-api-key')
+
+result = parser.parse(
+    input_data='messy text here',
+    output_schema={'name': 'string', 'age': 'number'}
+)
+
+print(result.parsed_data)
+```
+
+---
+
+## 🛡️ **Exoditical Moral Architecture**
+
+Parserator is built on **EMA principles** - a revolutionary approach to ethical software development:
+
+### **🔓 Digital Sovereignty**
+- **Your data is yours** - We never store input/output content
+- **No vendor lock-in** - Export everything, switch anytime
+- **Open standards** - JSON, OpenAPI, Docker - universal compatibility
+- **Transparent pricing** - No hidden costs or usage surprises
+
+### **🚪 The Right to Leave**
+- **Complete data export** - All schemas, templates, usage history
+- **Standard formats** - Import into any compatible system
+- **Migration tools** - Seamless transition to other platforms
+- **Zero retention** - Data deleted immediately upon request
+
+### **🌐 Universal Compatibility**  
+- **Framework agnostic** - Works with any agent development platform
+- **LLM agnostic** - Switch between OpenAI, Anthropic, Google, etc.
+- **Deployment agnostic** - Cloud, on-premise, or hybrid
+- **Standard protocols** - REST API, MCP, GraphQL support
+
+> *"The ultimate expression of empowerment is the freedom to leave."*
+
+---
+
+## 🧪 **Beta Program**
+
+### **🚀 Current Beta Features**
+- **Multi-LLM Support**: OpenAI, Anthropic, Google Gemini
+- **Advanced Schema Validation**: Type checking and constraint enforcement  
+- **Batch Processing**: Handle multiple documents simultaneously
+- **Custom Workflow Builder**: Chain parsing operations
+- **Real-time Monitoring**: Live parsing analytics dashboard
+
+### **Join the Beta**
+```bash
+# Install beta version
+npm install parserator@beta
+
+# Enable beta features
+parserator config set beta-features true
+```
+
+**Beta Feedback**: [Join Discord](https://discord.gg/parserator) | [GitHub Issues](https://github.com/domusgpt/parserator/issues)
+
+---
+
+## 📊 **Pricing**
+
+### **🆓 Free Tier**
+- **1,000 parses/month**
+- **Basic schema detection**
+- **Community support**
+- **Standard accuracy (90%)**
+
+### **⚡ Pro ($29/month)**
+- **50,000 parses/month**
+- **Advanced schema templates**
+- **Priority support**
+- **Enhanced accuracy (95%)**
+- **Batch processing**
+
+### **🏢 Enterprise (Custom)**
+- **Unlimited parsing**
+- **On-premise deployment**
+- **Custom integrations**
+- **SLA guarantee**
+- **Dedicated support**
+
+[**Start Free Trial →**](https://parserator.com/pricing)
+
+---
+
+## 🤝 **Community & Support**
+
+### **📚 Documentation**
+- [**API Reference**](https://docs.parserator.com/api)
+- [**Integration Guides**](https://docs.parserator.com/integrations)
+- [**Agent Frameworks**](https://docs.parserator.com/agents)
+- [**Schema Design**](https://docs.parserator.com/schemas)
+
+### **💬 Community**
+- [**Discord**](https://discord.gg/parserator) - Real-time support and discussions
+- [**GitHub Discussions**](https://github.com/domusgpt/parserator/discussions) - Feature requests and feedback
+- [**YouTube**](https://youtube.com/@parserator) - Tutorials and demos
+- [**LinkedIn**](https://linkedin.com/company/parserator) - Updates and announcements
+
+### **🛠️ Support**
+- **Email**: [Gen-rl-millz@parserator.com](mailto:Gen-rl-millz@parserator.com)
+- **Response Time**: <24 hours (Pro/Enterprise: <4 hours)
+- **Bug Reports**: [GitHub Issues](https://github.com/domusgpt/parserator/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/domusgpt/parserator/discussions)
+
+---
+
+## 🏆 **Why Parserator?**
+
+| **Feature** | **Parserator** | **Traditional Parsers** | **Single-LLM Solutions** |
+|-------------|----------------|-------------------------|--------------------------|
+| **Accuracy** | 95% | 60-70% | 85% |
+| **Token Efficiency** | 70% less | N/A | Baseline |
+| **Setup Time** | <5 minutes | Hours/Days | 30 minutes |
+| **Maintenance** | Zero | High | Medium |
+| **Vendor Lock-in** | None | High | Medium |
+| **Schema Flexibility** | Unlimited | Fixed | Limited |
+
+---
+
+## 📈 **Roadmap**
+
+### **Q2 2025 - Enhanced Intelligence**
+- [ ] **Multi-modal parsing** - Images, PDFs, audio
+- [ ] **Confidence scoring** - Per-field accuracy metrics
+- [ ] **Auto-correction** - Self-healing parsing failures
+- [ ] **Template marketplace** - Community schema sharing
+
+### **Q3 2025 - Enterprise Features**  
+- [ ] **On-premise deployment** - Full air-gapped operation
+- [ ] **Advanced monitoring** - Parsing analytics and optimization
+- [ ] **Workflow automation** - Trigger-based parsing pipelines
+- [ ] **Compliance tools** - GDPR, HIPAA, SOX support
+
+### **Q4 2025 - Platform Expansion**
+- [ ] **Mobile SDKs** - iOS and Android integration
+- [ ] **Desktop applications** - Native Windows, Mac, Linux
+- [ ] **Zapier/Make integration** - No-code automation
+- [ ] **Microsoft Power Platform** - Enterprise workflow integration
+
+---
+
+## 📄 **License**
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+**EMA Commitment**: This project follows Exoditical Moral Architecture principles, ensuring your right to digital sovereignty and freedom to migrate.
+
+---
+
+## 🙏 **Credits**
+
+Built with radical conviction by [**GEN-RL-MiLLz**](https://github.com/domusgpt) - "The Higher Dimensional Solo Dev"
+
+*"Grateful for your support as I grow Hooves & a Horn, taking pole position for the 2026 Agentic Derby."*
+
+---
+
+<div align="center">
+
+**[🚀 Get Started](https://parserator.com)** • **[📚 Documentation](https://docs.parserator.com)** • **[💬 Discord](https://discord.gg/parserator)** • **[🐙 GitHub](https://github.com/domusgpt/parserator)**
+
+**Transform your messy data into agent-ready JSON today.**
+
+</div>

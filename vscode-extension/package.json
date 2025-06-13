@@ -4,8 +4,8 @@
   "description": "Transform unstructured text into structured JSON using AI-powered parsing",
   "version": "1.0.0",
   "publisher": "domusgpt",
-  "author": "Paul Phillips <phillips.paul.email@gmail.com>",
-  "license": "PRIVATE",
+  "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -147,7 +147,7 @@
         },
         "parserator.baseUrl": {
           "type": "string",
-          "default": "https://api.parserator.com",
+          "default": "https://app-5108296280.us-central1.run.app",
           "description": "Parserator API base URL"
         },
         "parserator.timeout": {
@@ -239,7 +239,8 @@
     "url": "https://github.com/domusgpt/parserator.git"
   },
   "bugs": {
-    "url": "https://github.com/domusgpt/parserator/issues"
+    "url": "https://github.com/domusgpt/parserator/issues",
+    "email": "Gen-rl-millz@parserator.com"
   },
   "homepage": "https://parserator.com"
 }

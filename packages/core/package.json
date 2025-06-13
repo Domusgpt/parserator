@@ -39,7 +39,7 @@
     "data-extraction",
     "unstructured"
   ],
-  "author": "Paul Phillips <phillips.paul.email@gmail.com>",
+  "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"

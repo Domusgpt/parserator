@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "Paul Phillips", email = "phillips.paul.email@gmail.com"},
+    {name = "Paul Phillips", email = "Gen-rl-millz@parserator.com"},
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Intelligent data parsing for agentic workflows - SDK/ADK/MCP toolkit",
-  "author": "Paul Phillips <phillips.paul.email@gmail.com>",
+  "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
   "license": "PRIVATE",
   "workspaces": [
     "packages/*"

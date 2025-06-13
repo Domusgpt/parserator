@@ -237,3 +237,13 @@ deployment-config.local.json
 *.tar.gz
 *.rar
 *.7z
+
+# Internal development files (EMA cleanup)
+CLAUDE.md
+*INTERNAL*
+*HANDOFF*
+*LAUNCH*
+*DEPLOY*
+*CLEANUP*
+*BRIEFING*
+*.vsix

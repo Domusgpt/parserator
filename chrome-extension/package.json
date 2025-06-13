@@ -2,7 +2,7 @@
   "name": "parserator-chrome-extension",
   "version": "1.0.0",
   "description": "Chrome extension for Parserator AI-powered text parsing",
-  "author": "Paul Phillips <phillips.paul.email@gmail.com>",
+  "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
   "license": "PRIVATE",
   "scripts": {
     "build": "echo 'Building Chrome extension...' && npm run copy-assets",
