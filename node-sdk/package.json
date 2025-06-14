@@ -1,6 +1,6 @@
 {
   "name": "parserator-sdk",
-  "version": "1.0.0",
+  "version": "3.0.1",
   "description": "Official Node.js SDK for Parserator - Intelligent data parsing using the Architect-Extractor pattern",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

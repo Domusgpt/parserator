@@ -1,6 +1,6 @@
 {
   "name": "@parserator/dashboard",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Parserator Developer Dashboard - User management and API key portal",
   "private": true,
   "scripts": {

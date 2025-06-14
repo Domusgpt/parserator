@@ -83,13 +83,13 @@ parserator = "parserator.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/parserator"]
 
+[tool.hatch.version]
+path = "src/parserator/__init__.py"
+
 [tool.hatch.build.targets.sdist]
 include = [
     "/src",
-    "/tests",
-    "/examples",
     "/README.md",
-    "/LICENSE",
 ]
 
 [tool.black]

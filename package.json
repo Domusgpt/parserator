@@ -1,0 +1,72 @@
+{
+  "name": "parserator-monorepo",
+  "version": "1.0.0",
+  "description": "Parserator - The Structured Data Layer for AI Agents",
+  "private": true,
+  "scripts": {
+    "version:bump": "node scripts/version-bump.js",
+    "version:bump:minor": "node scripts/version-bump.js minor",
+    "version:bump:major": "node scripts/version-bump.js major",
+    "publish:monitor": "node scripts/publish-monitor.js",
+    "publish:monitor:watch": "node scripts/publish-monitor.js --watch",
+    "publish:validate": "node scripts/post-publish-validation.js",
+    "publish:validate:save": "node scripts/post-publish-validation.js --save",
+    "build:chrome": "cd chrome-extension && npm run package",
+    "build:vscode": "cd vscode-extension && npm run package", 
+    "build:python": "cd python-sdk && python -m build",
+    "build:node": "cd node-sdk && npm run build",
+    "build:dashboard": "cd dashboard && npm run build",
+    "build:jetbrains": "cd jetbrains-plugin && ./gradlew buildPlugin",
+    "build:all": "npm run build:chrome && npm run build:vscode && npm run build:python && npm run build:node && npm run build:dashboard",
+    "package:all": "npm run build:all && echo 'All packages built successfully'",
+    "test:api": "node testing/real-stats-test.js",
+    "test:chaos": "node testing/chaos-test-runner.js",
+    "test:all": "npm run test:api && npm run test:chaos",
+    "dev:setup": "echo 'Setting up development environment...' && npm run install:all",
+    "install:all": "cd chrome-extension && npm ci && cd ../vscode-extension && npm ci && cd ../dashboard && npm ci && cd ../node-sdk && npm ci && cd ../mcp-server && npm ci",
+    "clean": "rm -rf */dist */build */out */*.zip */*.vsix */node_modules",
+    "clean:builds": "rm -rf */dist */build */out */*.zip */*.vsix",
+    "worktree:setup": "git worktree add worktrees/feature-testing feature/testing-infrastructure && git worktree add worktrees/feature-ci-cd feature/ci-cd-infrastructure",
+    "worktree:list": "git worktree list",
+    "worktree:clean": "git worktree remove worktrees/feature-testing && git worktree remove worktrees/feature-ci-cd",
+    "release:prepare": "npm run test:all && npm run build:all && npm run version:bump",
+    "release:validate": "npm run publish:validate && npm run publish:monitor"
+  },
+  "workspaces": [
+    "chrome-extension",
+    "vscode-extension", 
+    "dashboard",
+    "node-sdk",
+    "mcp-server"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/domusgpt/parserator.git"
+  },
+  "keywords": [
+    "parsing",
+    "ai",
+    "llm", 
+    "data-extraction",
+    "json",
+    "structured-data",
+    "ema",
+    "parserator"
+  ],
+  "author": "Paul Phillips <phillips.paul.email@gmail.com>",
+  "license": "PROPRIETARY",
+  "homepage": "https://parserator.com",
+  "bugs": {
+    "url": "https://github.com/domusgpt/parserator/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "eslint": "^8.52.0",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0"
+  }
+}

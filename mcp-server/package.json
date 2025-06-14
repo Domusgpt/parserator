@@ -1,6 +1,6 @@
 {
   "name": "parserator-mcp-server",
-  "version": "1.0.1",
+  "version": "3.0.1",
   "description": "Model Context Protocol server for Parserator - EMA-compliant structured data parsing for AI agents",
   "main": "dist/index.js",
   "bin": {
@@ -12,7 +12,7 @@
     "test": "jest",
     "test:ema": "npm run test:ema:sovereignty && npm run test:ema:portability && npm run test:ema:standards && npm run test:ema:competition",
     "test:ema:sovereignty": "jest --testPathPattern=ema/sovereignty",
-    "test:ema:portability": "jest --testPathPattern=ema/portability", 
+    "test:ema:portability": "jest --testPathPattern=ema/portability",
     "test:ema:standards": "jest --testPathPattern=ema/standards",
     "test:ema:competition": "jest --testPathPattern=ema/competition",
     "lint": "eslint src --ext .ts",
@@ -92,13 +92,22 @@
         "migrationTools": "automated",
         "standardFormats": "universal",
         "documentation": "complete",
-        "exportFormats": ["json", "csv", "yaml", "xml"]
+        "exportFormats": [
+          "json",
+          "csv",
+          "yaml",
+          "xml"
+        ]
       },
       "standardsAgnosticism": {
         "apiSpecification": "openapi",
         "dataFormats": "standard",
         "integration": "universal",
-        "protocols": ["http", "websocket", "mcp"]
+        "protocols": [
+          "http",
+          "websocket",
+          "mcp"
+        ]
       },
       "transparentCompetition": {
         "wallOfOpenness": "public",

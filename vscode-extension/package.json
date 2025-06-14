@@ -2,7 +2,7 @@
   "name": "parserator",
   "displayName": "Parserator",
   "description": "Transform unstructured text into structured JSON using AI-powered parsing",
-  "version": "1.0.0",
+  "version": "3.0.1",
   "publisher": "domusgpt",
   "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
   "license": "MIT",
