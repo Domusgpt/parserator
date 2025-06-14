@@ -11,6 +11,8 @@ import {
   ValidationTypeEnum 
 } from '../interfaces/search-plan.interface';
 import { GeminiService, ILLMOptions, LLMError } from './llm.service';
+import { generateOperationId } from '../utils/operation-id.util';
+import { cleanLLMJsonString } from '../utils/llm-response.util';
 
 /**
  * Configuration for Extractor operations
@@ -87,7 +89,7 @@ export class ExtractorService {
     requestId?: string
   ): Promise<IExtractorResult> {
     const startTime = Date.now();
-    const operationId = requestId || this.generateOperationId();
+    const operationId = requestId || generateOperationId('ext');
 
     this.logger.info('Starting data extraction', {
       requestId: operationId,
@@ -98,68 +100,24 @@ export class ExtractorService {
     });
 
     try {
-      // Validate inputs
-      this.validateInputs(inputData, searchPlan);
+      // Validate inputs and build prompt
+      const prompt = this._buildExtractorPromptInternal(inputData, searchPlan);
 
-      // Build the extractor prompt
-      const prompt = this.buildExtractorPrompt(inputData, searchPlan);
-
-      // Call Gemini with extractor-specific options
-      const llmOptions: ILLMOptions = {
-        maxTokens: 3072,
-        temperature: 0.0, // Very low temperature for consistent extraction
-        timeoutMs: this.config.timeoutMs,
-        requestId: operationId,
-        model: 'gemini-1.5-flash'
-      };
-
-      const llmResponse = await this.geminiService.callGemini(prompt, llmOptions);
-
-      // Parse and validate the response
-      const extractionResult = this.parseExtractorResponse(
-        llmResponse.content, 
-        searchPlan, 
+      // Call LLM and parse response
+      const { extractionResult, llmResponse } = await this._callLLMAndParseExtractorResponse(
+        prompt,
+        searchPlan,
         operationId
       );
 
-      // Validate extracted data
-      const validationResult = this.validateExtractedData(extractionResult.parsedData, searchPlan);
-
-      // Calculate confidence scores
-      const fieldConfidence = this.calculateFieldConfidence(
-        extractionResult.parsedData, 
+      // Process and finalize the extraction
+      const result = this._processAndFinalizeExtraction(
+        extractionResult,
         searchPlan,
-        extractionResult.extractionNotes || {}
+        llmResponse,
+        startTime,
+        operationId
       );
-
-      const overallConfidence = this.calculateOverallConfidence(fieldConfidence, searchPlan);
-
-      // Identify failed fields
-      const failedFields = this.identifyFailedFields(extractionResult.parsedData, searchPlan);
-
-      // Calculate processing metrics
-      const processingTimeMs = Date.now() - startTime;
-
-      const result: IExtractorResult = {
-        parsedData: extractionResult.parsedData,
-        fieldConfidence,
-        overallConfidence,
-        tokensUsed: llmResponse.tokensUsed,
-        processingTimeMs,
-        model: llmResponse.model,
-        success: true,
-        failedFields
-      };
-
-      this.logger.info('Data extraction completed', {
-        requestId: operationId,
-        fieldsExtracted: Object.keys(extractionResult.parsedData).length,
-        failedFields: failedFields.length,
-        overallConfidence,
-        tokensUsed: llmResponse.tokensUsed,
-        processingTimeMs,
-        operation: 'executeSearchPlan'
-      });
 
       return result;
 
@@ -173,39 +131,135 @@ export class ExtractorService {
         operation: 'executeSearchPlan'
       });
 
+      let errorCode = 'UNEXPECTED_EXTRACTOR_ERROR';
+      let errorDetails = { requestId: operationId, originalError: error };
+
+      if (error instanceof ExtractorError) {
+        errorCode = error.code;
+        errorDetails = { ...errorDetails, ...error.details };
+      } else if (error instanceof LLMError) {
+        errorCode = 'LLM_ERROR';
+        // You might want to add specific LLM error details if available from LLMError
+      }
+
+      // For known errors (ExtractorError, LLMError), return a structured error response
       if (error instanceof ExtractorError || error instanceof LLMError) {
         return {
           parsedData: {},
           fieldConfidence: {},
           overallConfidence: 0.0,
-          tokensUsed: 0,
+          tokensUsed: 0, // Consider if any tokens were used before the error
           processingTimeMs,
-          model: 'gemini-1.5-flash',
+          model: 'gemini-1.5-flash', // Or a default/error model
           success: false,
-          failedFields: searchPlan.steps.map(step => step.targetKey),
+          failedFields: searchPlan.steps.map(step => step.targetKey), // Assume all fields failed
           error: {
-            code: error.constructor.name === 'ExtractorError' ? 
-              (error as ExtractorError).code : 'LLM_ERROR',
+            code: errorCode,
             message: error.message,
-            details: {
-              requestId: operationId,
-              ...(error instanceof ExtractorError ? error.details : {})
-            }
+            details: errorDetails
           }
         };
       }
 
-      // Unexpected error
+      // For truly unexpected errors, re-throw a generic ExtractorError
       throw new ExtractorError(
         `Unexpected error during data extraction: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'UNEXPECTED_ERROR',
-        { requestId: operationId, originalError: error }
+        errorCode, // This will be 'UNEXPECTED_EXTRACTOR_ERROR'
+        errorDetails
       );
     }
   }
 
   /**
+   * Validates inputs and builds the extractor prompt.
+   */
+  private _buildExtractorPromptInternal(inputData: string, searchPlan: ISearchPlan): string {
+    this.validateInputs(inputData, searchPlan);
+    return this.buildExtractorPrompt(inputData, searchPlan);
+  }
+
+  /**
+   * Calls the LLM and parses the extractor response.
+   */
+  private async _callLLMAndParseExtractorResponse(
+    prompt: string,
+    searchPlan: ISearchPlan,
+    operationId: string
+  ): Promise<{ extractionResult: { parsedData: Record<string, any>; extractionNotes?: Record<string, string> }; llmResponse: any }> {
+    const llmOptions: ILLMOptions = {
+      maxTokens: 3072,
+      temperature: 0.0, // Very low temperature for consistent extraction
+      timeoutMs: this.config.timeoutMs,
+      requestId: operationId,
+      model: 'gemini-1.5-flash'
+    };
+
+    const llmResponse = await this.geminiService.callGemini(prompt, llmOptions);
+    const extractionResult = this.parseExtractorResponse(
+      llmResponse.content,
+      searchPlan,
+      operationId
+    );
+    return { extractionResult, llmResponse };
+  }
+
+  /**
+   * Processes the extraction result, validates data, calculates confidence, and finalizes the result.
+   */
+  private _processAndFinalizeExtraction(
+    extractionResult: { parsedData: Record<string, any>; extractionNotes?: Record<string, string> },
+    searchPlan: ISearchPlan,
+    llmResponse: any, // Consider typing this more strictly
+    startTime: number,
+    operationId: string
+  ): IExtractorResult {
+    // Validate extracted data
+    const validationResult = this.validateExtractedData(extractionResult.parsedData, searchPlan);
+    // TODO: Potentially use validationResult to adjust confidence or mark fields as failed
+
+    // Calculate confidence scores
+    const fieldConfidence = this.calculateFieldConfidence(
+      extractionResult.parsedData,
+      searchPlan,
+      extractionResult.extractionNotes || {}
+    );
+
+    const overallConfidence = this.calculateOverallConfidence(fieldConfidence, searchPlan);
+
+    // Identify failed fields
+    const failedFields = this.identifyFailedFields(extractionResult.parsedData, searchPlan);
+
+    // Calculate processing metrics
+    const processingTimeMs = Date.now() - startTime;
+
+    const result: IExtractorResult = {
+      parsedData: extractionResult.parsedData,
+      fieldConfidence,
+      overallConfidence,
+      tokensUsed: llmResponse.tokensUsed,
+      processingTimeMs,
+      model: llmResponse.model,
+      success: true,
+      failedFields
+    };
+
+    this.logger.info('Data extraction completed', {
+      requestId: operationId,
+      fieldsExtracted: Object.keys(extractionResult.parsedData).length,
+      failedFields: failedFields.length,
+      overallConfidence,
+      tokensUsed: llmResponse.tokensUsed,
+      processingTimeMs,
+      operation: 'executeSearchPlan'
+    });
+
+    return result;
+  }
+
+
+  /**
    * Build the optimized prompt for the Extractor LLM
+   * TODO: Consider externalizing or further templating if this prompt grows much larger or becomes more dynamic.
    */
   private buildExtractorPrompt(inputData: string, searchPlan: ISearchPlan): string {
     const stepsJson = JSON.stringify(searchPlan.steps, null, 2);
@@ -308,15 +362,7 @@ RESPOND WITH ONLY THE JSON - NO OTHER TEXT.`;
     requestId: string
   ): { parsedData: Record<string, any>; extractionNotes?: Record<string, string> } {
     try {
-      // Clean the response - remove any markdown formatting
-      let cleanContent = content.trim();
-      
-      // Remove markdown code blocks if present
-      if (cleanContent.startsWith('```')) {
-        cleanContent = cleanContent.replace(/^```[json]*\n?/, '').replace(/\n?```$/, '');
-      }
-
-      // Parse JSON
+      const cleanContent = cleanLLMJsonString(content);
       const parsed = JSON.parse(cleanContent);
 
       // Validate required structure
@@ -652,15 +698,6 @@ RESPOND WITH ONLY THE JSON - NO OTHER TEXT.`;
         'EMPTY_SEARCH_PLAN'
       );
     }
-  }
-
-  /**
-   * Generate unique operation ID for tracking
-   */
-  private generateOperationId(): string {
-    const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substring(2, 8);
-    return `ext_${timestamp}_${random}`;
   }
 
   /**

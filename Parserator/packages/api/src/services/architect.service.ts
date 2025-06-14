@@ -11,6 +11,8 @@ import {
   ValidationTypeEnum 
 } from '../interfaces/search-plan.interface';
 import { GeminiService, ILLMOptions, LLMError } from './llm.service';
+import { generateOperationId } from '../utils/operation-id.util';
+import { cleanLLMJsonString } from '../utils/llm-response.util';
 
 /**
  * Configuration for Architect operations
@@ -88,7 +90,7 @@ export class ArchitectService {
     requestId?: string
   ): Promise<IArchitectResult> {
     const startTime = Date.now();
-    const operationId = requestId || this.generateOperationId();
+    const operationId = requestId || generateOperationId('arch');
 
     this.logger.info('Starting SearchPlan generation', {
       requestId: operationId,
@@ -99,56 +101,28 @@ export class ArchitectService {
     });
 
     try {
-      // Validate inputs
-      this.validateInputs(outputSchema, dataSample);
-
-      // Create optimized data sample
-      const optimizedSample = this.createOptimizedSample(dataSample);
-
-      // Build the architect prompt
-      const prompt = this.buildArchitectPrompt(
-        outputSchema, 
-        optimizedSample, 
+      // Validate inputs, create optimized sample, and build prompt
+      const { prompt, optimizedSampleLength } = this._buildAndValidatePrompt(
+        outputSchema,
+        dataSample,
         userInstructions
       );
 
-      // Call Gemini with architect-specific options
-      const llmOptions: ILLMOptions = {
-        maxTokens: 2048,
-        temperature: 0.1, // Low temperature for consistent planning
-        timeoutMs: this.config.timeoutMs,
-        requestId: operationId,
-        model: 'gemini-1.5-flash'
-      };
+      // Call LLM and parse response
+      const { searchPlan, llmResponse } = await this._callLLMAndParseResponse(
+        prompt,
+        operationId,
+        optimizedSampleLength // Pass this to potentially use in metadata later
+      );
 
-      const llmResponse = await this.geminiService.callGemini(prompt, llmOptions);
-
-      // Parse and validate the response
-      const searchPlan = this.parseArchitectResponse(llmResponse.content, operationId);
-
-      // Validate the generated plan
-      this.validateSearchPlan(searchPlan, outputSchema);
-
-      // Calculate processing metrics
-      const processingTimeMs = Date.now() - startTime;
-
-      const result: IArchitectResult = {
+      // Validate search plan and finalize the result
+      const result = this._validateAndFinalizeSearchPlan(
         searchPlan,
-        tokensUsed: llmResponse.tokensUsed,
-        processingTimeMs,
-        model: llmResponse.model,
-        success: true
-      };
-
-      this.logger.info('SearchPlan generation completed', {
-        requestId: operationId,
-        stepsGenerated: searchPlan.steps.length,
-        confidence: searchPlan.architectConfidence,
-        complexity: searchPlan.estimatedComplexity,
-        tokensUsed: llmResponse.tokensUsed,
-        processingTimeMs,
-        operation: 'generateSearchPlan'
-      });
+        outputSchema,
+        llmResponse,
+        startTime,
+        operationId
+      );
 
       return result;
 
@@ -162,36 +136,120 @@ export class ArchitectService {
         operation: 'generateSearchPlan'
       });
 
+      let errorCode = 'UNEXPECTED_ARCHITECT_ERROR';
+      let errorDetails = { requestId: operationId, originalError: error };
+
+      if (error instanceof ArchitectError) {
+        errorCode = error.code;
+        errorDetails = { ...errorDetails, ...error.details };
+      } else if (error instanceof LLMError) {
+        errorCode = 'LLM_ERROR';
+        // You might want to add specific LLM error details if available from LLMError
+      }
+
+      // For known errors (ArchitectError, LLMError), return a structured error response
       if (error instanceof ArchitectError || error instanceof LLMError) {
         return {
           searchPlan: this.createEmptySearchPlan(),
-          tokensUsed: 0,
+          tokensUsed: 0, // Consider if any tokens were used before the error
           processingTimeMs,
-          model: 'gemini-1.5-flash',
+          model: 'gemini-1.5-flash', // Or a default/error model
           success: false,
           error: {
-            code: error.constructor.name === 'ArchitectError' ? 
-              (error as ArchitectError).code : 'LLM_ERROR',
+            code: errorCode,
             message: error.message,
-            details: {
-              requestId: operationId,
-              ...(error instanceof ArchitectError ? error.details : {})
-            }
+            details: errorDetails
           }
         };
       }
 
-      // Unexpected error
+      // For truly unexpected errors, re-throw a generic ArchitectError
+      // This preserves the original behavior of throwing for unexpected issues.
       throw new ArchitectError(
         `Unexpected error during SearchPlan generation: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'UNEXPECTED_ERROR',
-        { requestId: operationId, originalError: error }
+        errorCode, // This will be 'UNEXPECTED_ARCHITECT_ERROR'
+        errorDetails
       );
     }
   }
 
   /**
+   * Validates inputs, creates an optimized sample, and builds the prompt.
+   */
+  private _buildAndValidatePrompt(
+    outputSchema: Record<string, any>,
+    dataSample: string,
+    userInstructions?: string
+  ): { prompt: string; optimizedSampleLength: number } {
+    this.validateInputs(outputSchema, dataSample);
+    const optimizedSample = this.createOptimizedSample(dataSample);
+    const prompt = this.buildArchitectPrompt(
+      outputSchema,
+      optimizedSample,
+      userInstructions
+    );
+    return { prompt, optimizedSampleLength: optimizedSample.length };
+  }
+
+  /**
+   * Calls the LLM and parses the initial response.
+   */
+  private async _callLLMAndParseResponse(
+    prompt: string,
+    operationId: string,
+    optimizedSampleLength: number
+  ): Promise<{ searchPlan: ISearchPlan; llmResponse: any }> {
+    const llmOptions: ILLMOptions = {
+      maxTokens: 2048,
+      temperature: 0.1, // Low temperature for consistent planning
+      timeoutMs: this.config.timeoutMs,
+      requestId: operationId,
+      model: 'gemini-1.5-flash'
+    };
+
+    const llmResponse = await this.geminiService.callGemini(prompt, llmOptions);
+    const searchPlan = this.parseArchitectResponse(llmResponse.content, operationId, optimizedSampleLength);
+    return { searchPlan, llmResponse };
+  }
+
+  /**
+   * Validates the search plan and finalizes the architect result.
+   */
+  private _validateAndFinalizeSearchPlan(
+    searchPlan: ISearchPlan,
+    outputSchema: Record<string, any>,
+    llmResponse: any, // Consider typing this more strictly if GeminiService response is well-defined
+    startTime: number,
+    operationId: string
+  ): IArchitectResult {
+    this.validateSearchPlan(searchPlan, outputSchema);
+
+    const processingTimeMs = Date.now() - startTime;
+    const result: IArchitectResult = {
+      searchPlan,
+      tokensUsed: llmResponse.tokensUsed,
+      processingTimeMs,
+      model: llmResponse.model,
+      success: true
+    };
+
+    this.logger.info('SearchPlan generation completed', {
+      requestId: operationId,
+      stepsGenerated: searchPlan.steps.length,
+      confidence: searchPlan.architectConfidence,
+      complexity: searchPlan.estimatedComplexity,
+      tokensUsed: llmResponse.tokensUsed,
+      processingTimeMs,
+      operation: 'generateSearchPlan'
+    });
+
+    return result;
+  }
+
+
+  /**
    * Build the optimized prompt for the Architect LLM
+   * TODO: Consider externalizing or further templating if this prompt grows much larger or becomes more dynamic.
    */
   private buildArchitectPrompt(
     outputSchema: Record<string, any>,
@@ -242,7 +300,7 @@ You must respond with ONLY a valid JSON object matching this exact structure:
   "metadata": {
     "createdAt": "${new Date().toISOString()}",
     "architectVersion": "${this.config.promptVersion}",
-    "sampleLength": ${dataSample.length},
+      "sampleLength": ${dataSample.length}, // This will be updated by the actual sample length in the final plan
     "userInstructions": "${userInstructions || ''}"
   }
 }
@@ -290,17 +348,9 @@ RESPOND WITH ONLY THE JSON - NO EXPLANATIONS OR MARKDOWN FORMATTING.`;
   /**
    * Parse and validate the Architect's JSON response
    */
-  private parseArchitectResponse(content: string, requestId: string): ISearchPlan {
+  private parseArchitectResponse(content: string, requestId: string, optimizedSampleLength: number): ISearchPlan {
     try {
-      // Clean the response - remove any markdown formatting
-      let cleanContent = content.trim();
-      
-      // Remove markdown code blocks if present
-      if (cleanContent.startsWith('```')) {
-        cleanContent = cleanContent.replace(/^```[json]*\n?/, '').replace(/\n?```$/, '');
-      }
-
-      // Parse JSON
+      const cleanContent = cleanLLMJsonString(content);
       const parsed = JSON.parse(cleanContent);
 
       // Validate required fields
@@ -336,7 +386,7 @@ RESPOND WITH ONLY THE JSON - NO EXPLANATIONS OR MARKDOWN FORMATTING.`;
         metadata: {
           createdAt: parsed.metadata?.createdAt || new Date().toISOString(),
           architectVersion: parsed.metadata?.architectVersion || this.config.promptVersion,
-          sampleLength: parsed.metadata?.sampleLength || 0,
+          sampleLength: optimizedSampleLength, // Use the actual optimized sample length
           userInstructions: parsed.metadata?.userInstructions
         }
       };
@@ -555,15 +605,6 @@ RESPOND WITH ONLY THE JSON - NO EXPLANATIONS OR MARKDOWN FORMATTING.`;
         sampleLength: 0
       }
     };
-  }
-
-  /**
-   * Generate unique operation ID for tracking
-   */
-  private generateOperationId(): string {
-    const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substring(2, 8);
-    return `arch_${timestamp}_${random}`;
   }
 
   /**

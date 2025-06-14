@@ -13,6 +13,7 @@ import {
 import { GeminiService } from './llm.service';
 import { ArchitectService, ArchitectError } from './architect.service';
 import { ExtractorService, ExtractorError } from './extractor.service';
+import { generateOperationId } from '../utils/operation-id.util';
 
 /**
  * Configuration for Parse operations
@@ -133,76 +134,44 @@ export class ParseService {
    */
   async parse(request: IParseRequest): Promise<IParseResult> {
     const startTime = Date.now();
-    const operationId = request.requestId || this.generateOperationId();
-
-    this.logger.info('Starting parse operation', {
-      requestId: operationId,
-      userId: request.userId,
-      inputLength: request.inputData.length,
-      schemaFields: Object.keys(request.outputSchema).length,
-      hasInstructions: !!request.instructions,
-      operation: 'parse'
-    });
+    const operationId = request.requestId || generateOperationId('parse');
 
     try {
-      // Validate inputs
-      this.validateParseRequest(request);
+      this._validateAndInitializeParse(request, operationId);
 
       // Stage 1: Generate SearchPlan with the Architect
-      const architectResult = await this.executeArchitectStage(
-        request.outputSchema,
-        request.inputData,
-        request.instructions,
-        operationId
+      const architectResult = await this._executeArchitectStageInternal(
+        request,
+        operationId,
+        startTime
       );
 
       if (!architectResult.success) {
-        return this.createFailureResult(
-          architectResult.error!,
-          'architect',
-          operationId,
-          Date.now() - startTime,
-          architectResult.tokensUsed
-        );
+        // If Architect stage failed, architectResult is already a complete IParseResult
+        return architectResult as IParseResult;
       }
 
       // Stage 2: Execute SearchPlan with the Extractor
-      const extractorResult = await this.executeExtractorStage(
+      const extractorResult = await this._executeExtractorStageInternal(
         request.inputData,
-        architectResult.searchPlan,
-        operationId
+        architectResult as IArchitectResult, // We know it's successful here
+        operationId,
+        startTime
       );
 
       if (!extractorResult.success) {
-        return this.createFailureResult(
-          extractorResult.error!,
-          'extractor',
-          operationId,
-          Date.now() - startTime,
-          architectResult.tokensUsed + extractorResult.tokensUsed,
-          architectResult.searchPlan
-        );
+        // If Extractor stage failed, extractorResult is already a complete IParseResult
+        return extractorResult as IParseResult;
       }
 
       // Combine results and validate overall quality
-      const result = this.combineResults(
-        architectResult,
-        extractorResult,
-        Date.now() - startTime,
-        operationId
+      const result = this._finalizeParseResult(
+        architectResult as IArchitectResult, // We know it's successful here
+        extractorResult as IExtractorResult, // We know it's successful here
+        startTime,
+        operationId,
+        request.userId
       );
-
-      // Apply fallback strategies if confidence is too low
-      if (this.config.enableFallbacks && result.metadata.confidence < this.config.minOverallConfidence) {
-        this.logger.warn('Low confidence result, applying fallbacks', {
-          requestId: operationId,
-          confidence: result.metadata.confidence,
-          threshold: this.config.minOverallConfidence
-        });
-        
-        // Note: Fallback implementation would go here
-        // For now, we proceed with the low-confidence result
-      }
 
       this.logger.info('Parse operation completed successfully', {
         requestId: operationId,
@@ -252,6 +221,118 @@ export class ParseService {
         processingTimeMs
       );
     }
+  }
+
+  /**
+   * Executes the Architect stage and handles its errors.
+   * Returns either a successful IArchitectResult or a failed IParseResult.
+   */
+  private async _executeArchitectStageInternal(
+    request: IParseRequest,
+    operationId: string,
+    startTime: number
+  ): Promise<IArchitectResult | IParseResult> {
+    const architectResult = await this.executeArchitectStage(
+      request.outputSchema,
+      request.inputData,
+      request.instructions,
+      operationId
+    );
+
+    if (!architectResult.success) {
+      return this.createFailureResult(
+        architectResult.error!,
+        'architect',
+        operationId,
+        Date.now() - startTime,
+        architectResult.tokensUsed
+      );
+    }
+    return architectResult;
+  }
+
+  /**
+   * Executes the Extractor stage and handles its errors.
+   * Returns either a successful IExtractorResult or a failed IParseResult.
+   */
+  private async _executeExtractorStageInternal(
+    inputData: string,
+    architectResult: IArchitectResult,
+    operationId: string,
+    startTime: number
+  ): Promise<IExtractorResult | IParseResult> {
+    const extractorResult = await this.executeExtractorStage(
+      inputData,
+      architectResult.searchPlan,
+      operationId
+    );
+
+    if (!extractorResult.success) {
+      return this.createFailureResult(
+        extractorResult.error!,
+        'extractor',
+        operationId,
+        Date.now() - startTime,
+        architectResult.tokensUsed + extractorResult.tokensUsed,
+        architectResult.searchPlan
+      );
+    }
+    return extractorResult;
+  }
+
+  /**
+   * Finalizes the parse result, combining information from Architect and Extractor stages,
+   * and applying any fallback logic if necessary.
+   */
+  private _finalizeParseResult(
+    architectResult: IArchitectResult,
+    extractorResult: IExtractorResult,
+    startTime: number,
+    operationId: string,
+    userId?: string
+  ): IParseResult {
+    const result = this.combineResults(
+      architectResult,
+      extractorResult,
+      Date.now() - startTime,
+      operationId
+    );
+
+    // Apply fallback strategies if confidence is too low
+    if (this.config.enableFallbacks && result.metadata.confidence < this.config.minOverallConfidence) {
+      this.logger.warn('Low confidence result, applying fallbacks', {
+        requestId: operationId,
+        confidence: result.metadata.confidence,
+        threshold: this.config.minOverallConfidence
+      });
+
+      // TODO: Implement a more robust fallback strategy.
+      // This could involve:
+      // 1. Retrying the Extractor stage with a simplified search plan (e.g., removing low-confidence steps).
+      // 2. Retrying the Architect stage with different sampling or instructions.
+      // 3. Using a simpler, potentially rule-based, parsing model as a last resort.
+      // 4. Returning a specific error or default response indicating low confidence.
+      // For now, we proceed with the low-confidence result.
+    }
+    return result;
+  }
+
+
+  /**
+   * Validates the parse request and performs initial logging.
+   */
+  private _validateAndInitializeParse(request: IParseRequest, operationId: string): void {
+    this.logger.info('Starting parse operation', {
+      requestId: operationId,
+      userId: request.userId,
+      inputLength: request.inputData.length,
+      schemaFields: Object.keys(request.outputSchema).length,
+      hasInstructions: !!request.instructions,
+      operation: 'parse'
+    });
+
+    // Validate inputs
+    this.validateParseRequest(request);
   }
 
   /**
@@ -547,12 +628,6 @@ export class ParseService {
   /**
    * Generate unique operation ID for tracking
    */
-  private generateOperationId(): string {
-    const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substring(2, 8);
-    return `parse_${timestamp}_${random}`;
-  }
-
   /**
    * Get service health status
    */
@@ -603,6 +678,12 @@ export class ParseService {
   updateConfig(newConfig: Partial<IParseConfig>): void {
     this.config = { ...this.config, ...newConfig };
     
+    // TODO: Consider a more centralized configuration management approach
+    // if the number of sub-services or configuration complexity grows.
+    // This could involve a dedicated configuration service or an event-based
+    // update mechanism to propagate changes more effectively.
+    // For now, direct updates to sub-services are acceptable.
+
     // Update sub-service configurations
     this.architectService.updateConfig({
       maxSampleLength: this.config.architectSampleSize,
