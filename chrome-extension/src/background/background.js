@@ -20,8 +20,12 @@ class BackgroundService {
     this.setupEventListeners();
     
     // Initialize services
-    await parseratorService.initialize();
-    await storageManager.initializeDefaultSchemas();
+    // The new services (parseratorServiceAPI, storageService) are set up when their scripts are imported.
+    // parseratorServiceAPI's getApiClient is async and handles internal initialization.
+    // storageService's initializeDefaultSchemas was a placeholder, can be called if it exists on self.storageManager
+    if (self.storageManager && typeof self.storageManager.initializeDefaultSchemas === 'function') {
+      await self.storageManager.initializeDefaultSchemas();
+    }
     
     // Create context menus
     this.createContextMenus();
@@ -63,8 +67,11 @@ class BackgroundService {
 
   async handleStartup() {
     // Extension started
-    await parseratorService.initialize();
-    await storageManager.initializeDefaultSchemas();
+    // Initialization is handled by the service scripts themselves or on first use.
+    // If storageManager has an init function for startup:
+    if (self.storageManager && typeof self.storageManager.initializeDefaultSchemas === 'function') {
+      await self.storageManager.initializeDefaultSchemas();
+    }
   }
 
   createContextMenus() {
@@ -123,7 +130,7 @@ class BackgroundService {
   }
 
   async addSchemaMenus() {
-    const schemas = await storageManager.getSchemas();
+    const schemas = await self.storageService.listSchemas(); // Use storageService
     const maxMenuItems = 5; // Limit menu items to avoid clutter
 
     schemas.slice(0, maxMenuItems).forEach((schema, index) => {
@@ -196,29 +203,34 @@ class BackgroundService {
     try {
       switch (message.action) {
         case 'parse-text':
-          const result = await this.parseText(message.data);
-          sendResponse({ success: true, data: result });
+          // message.data should be { text, schema, schemaId?, model?, instructions?, tabUrl?, schemaName? }
+          // The handleParseTextMessage was created to encapsulate this logic
+          const result = await this.handleParseTextMessage(message.data);
+          sendResponse(result); // result is already a ParseResponse like {success, data/error}
           break;
 
         case 'get-schemas':
-          const schemas = await storageManager.getSchemas();
+          const schemas = await self.storageService.listSchemas();
           sendResponse({ success: true, data: schemas });
           break;
 
         case 'save-schema':
-          const savedSchema = await storageManager.saveSchema(message.data);
+          // message.data should be UpsertSchemaRequest
+          const savedSchema = await self.storageService.saveSchema(message.data);
           await this.updateContextMenus();
           sendResponse({ success: true, data: savedSchema });
           break;
 
         case 'delete-schema':
-          await storageManager.deleteSchema(message.data.id);
+          await self.storageService.deleteSchema(message.data.id);
           await this.updateContextMenus();
           sendResponse({ success: true });
           break;
 
         case 'get-parsed-data':
-          const parsedData = await storageManager.getParsedData();
+          // This was not part of the new storageService spec, assuming it's local only for now
+          // self.storageManager might still have this from the placeholder storage.js
+          const parsedData = await (self.storageManager?.getParsedData ? self.storageManager.getParsedData() : Promise.resolve([]));
           sendResponse({ success: true, data: parsedData });
           break;
 
@@ -228,12 +240,13 @@ class BackgroundService {
           break;
 
         case 'test-connection':
-          const isConnected = await parseratorService.testConnection();
+          const isConnected = await self.parseratorServiceAPI.testConnection();
           sendResponse({ success: true, data: isConnected });
           break;
 
         case 'get-usage':
-          const usage = await parseratorService.getUsage();
+          // parseratorServiceAPI.getUsage() is mocked in the conceptual service.js
+          const usage = await self.parseratorServiceAPI.getUsage();
           sendResponse({ success: true, data: usage });
           break;
 
@@ -255,7 +268,8 @@ class BackgroundService {
 
   async handleTabUpdated(tabId, changeInfo, tab) {
     if (changeInfo.status === 'complete' && tab.url) {
-      const settings = await storageManager.getSettings();
+      // Assuming general settings are stored under a single 'settings' key or similar by storageService
+      const settings = await self.storageService.loadSetting('settings', { autoDetect: false });
       
       if (settings.autoDetect) {
         // Inject content script if needed and trigger auto-detection
@@ -313,33 +327,29 @@ class BackgroundService {
 
   async quickParse(text, tab) {
     try {
-      const settings = await storageManager.getSettings();
-      let schema = settings.defaultSchema;
+      // Load default schema settings using storageService
+      const defaultSchemaSetting = await self.storageService.loadSetting('defaultSchema', { name: 'Default', schema: { text: 'string' } });
+      const schemaToUse = defaultSchemaSetting.schema || defaultSchemaSetting; // Ensure we get the schema object
+      const schemaName = defaultSchemaSetting.name || 'Default Quick Parse';
 
-      if (!schema) {
-        // Use a default schema
-        schema = {
-          name: 'string',
-          description: 'string',
-          value: 'string'
-        };
+      // Call the new parseratorServiceAPI
+      const parseResponse = await self.parseratorServiceAPI.parseText(text, schemaToUse); // schemaId and model are undefined
+      
+      if (parseResponse.success) {
+        // Save result using storageManager (if it exists and has saveParsedData)
+        if (self.storageManager?.saveParsedData) {
+            await self.storageManager.saveParsedData({
+            url: tab.url,
+            inputData: text,
+            outputSchema: schemaToUse,
+            parsedData: parseResponse.result, // Use .result from ParseResponse
+            schemaUsed: schemaName
+          });
+        }
+        await this.showParseResult(parseResponse, tab, schemaName);
+      } else {
+        await this.showNotification('Parse Error', parseResponse.error || 'Quick parse failed');
       }
-
-      const result = await parseratorService.parse(text, schema);
-      
-      // Save result
-      const dataEntry = await storageManager.saveParsedData({
-        url: tab.url,
-        inputData: text,
-        outputSchema: schema,
-        parsedData: result.parsedData,
-        metadata: result.metadata,
-        schemaUsed: 'quick-parse'
-      });
-
-      // Show result
-      await this.showParseResult(result, tab);
-      
     } catch (error) {
       await this.showNotification('Parse Error', error.message);
     }
@@ -347,26 +357,28 @@ class BackgroundService {
 
   async parseWithSchema(text, schemaId, tab) {
     try {
-      const schema = await storageManager.getSchema(schemaId);
-      if (!schema) {
-        throw new Error('Schema not found');
+      const schemaRecord = await self.storageService.getSchema(schemaId);
+      if (!schemaRecord || !schemaRecord.schema) {
+        throw new Error('Schema not found or is invalid.');
       }
 
-      const result = await parseratorService.parse(text, schema.schema);
+      // Call the new parseratorServiceAPI
+      const parseResponse = await self.parseratorServiceAPI.parseText(text, schemaRecord.schema, schemaId);
       
-      // Save result
-      await storageManager.saveParsedData({
-        url: tab.url,
-        inputData: text,
-        outputSchema: schema.schema,
-        parsedData: result.parsedData,
-        metadata: result.metadata,
-        schemaUsed: schema.name
-      });
-
-      // Show result
-      await this.showParseResult(result, tab);
-      
+      if (parseResponse.success) {
+        if (self.storageManager?.saveParsedData) {
+            await self.storageManager.saveParsedData({
+            url: tab.url,
+            inputData: text,
+            outputSchema: schemaRecord.schema,
+            parsedData: parseResponse.result, // Use .result
+            schemaUsed: schemaRecord.name
+          });
+        }
+        await this.showParseResult(parseResponse, tab, schemaRecord.name);
+      } else {
+         await this.showNotification('Parse Error', parseResponse.error || `Failed to parse with ${schemaRecord.name}`);
+      }
     } catch (error) {
       await this.showNotification('Parse Error', error.message);
     }
@@ -374,82 +386,96 @@ class BackgroundService {
 
   async autoDetectAndParse(text, tab) {
     try {
-      // Simple auto-detection logic based on content patterns
-      let detectedSchema;
+      let detectedSchemaObject;
+      let schemaName = 'Auto-Detected';
+      const schemas = await self.storageService.listSchemas();
 
+      // Simplified auto-detection logic (assumes specific schema names or keywords in names)
       if (this.detectContactInfo(text)) {
-        const schemas = await storageManager.getSchemas();
-        detectedSchema = schemas.find(s => s.id === 'default_contact')?.schema;
+        const s = schemas.find(s => s.name.toLowerCase().includes('contact'));
+        if(s) { detectedSchemaObject = s.schema; schemaName = s.name; }
       } else if (this.detectProductInfo(text)) {
-        const schemas = await storageManager.getSchemas();
-        detectedSchema = schemas.find(s => s.id === 'default_product')?.schema;
+        const s = schemas.find(s => s.name.toLowerCase().includes('product'));
+        if(s) { detectedSchemaObject = s.schema; schemaName = s.name; }
       } else if (this.detectEventInfo(text)) {
-        const schemas = await storageManager.getSchemas();
-        detectedSchema = schemas.find(s => s.id === 'default_event')?.schema;
-      } else {
-        // Generic schema
-        detectedSchema = {
-          title: 'string',
-          description: 'string',
-          category: 'string',
-          data: 'string'
-        };
+        const s = schemas.find(s => s.name.toLowerCase().includes('event'));
+        if(s) { detectedSchemaObject = s.schema; schemaName = s.name; }
+      }
+      if (!detectedSchemaObject) { // Fallback if no specific schema was found by keywords
+          const defaultSchemaSetting = await self.storageService.loadSetting('defaultSchema', { name: 'Default', schema: { text: 'string' } });
+          detectedSchemaObject = defaultSchemaSetting.schema || defaultSchemaSetting;
+          schemaName = `Auto-Detect (${defaultSchemaSetting.name || 'Default'})`;
       }
 
-      const result = await parseratorService.parse(text, detectedSchema);
+      const parseResponse = await self.parseratorServiceAPI.parseText(text, detectedSchemaObject);
       
-      // Save result
-      await storageManager.saveParsedData({
-        url: tab.url,
-        inputData: text,
-        outputSchema: detectedSchema,
-        parsedData: result.parsedData,
-        metadata: result.metadata,
-        schemaUsed: 'auto-detect'
-      });
-
-      // Show result
-      await this.showParseResult(result, tab);
-      
+      if(parseResponse.success) {
+        if (self.storageManager?.saveParsedData) {
+            await self.storageManager.saveParsedData({
+            url: tab.url,
+            inputData: text,
+            outputSchema: detectedSchemaObject,
+            parsedData: parseResponse.result, // Use .result
+            schemaUsed: schemaName
+          });
+        }
+        await this.showParseResult(parseResponse, tab, schemaName);
+      } else {
+        await this.showNotification('Parse Error', parseResponse.error || 'Auto-detect parse failed');
+      }
     } catch (error) {
       await this.showNotification('Parse Error', error.message);
     }
   }
 
-  async parseText(data) {
-    const result = await parseratorService.parse(
-      data.inputData,
-      data.outputSchema,
-      data.instructions
+  // This is the direct message handler for 'parse-text' from handleMessage
+  async handleParseTextMessage(data) {
+    // data = { text, schema, schemaId?, model?, instructions?, tabUrl?, schemaName? }
+    // `data.instructions` is not used by parseratorServiceAPI.parseText directly.
+    // It should be part of the schema object if needed by the API/model.
+    const parseResponse = await self.parseratorServiceAPI.parseText(
+      data.text || data.inputData,
+      data.schema || data.outputSchema,
+      data.schemaId,
+      data.model
     );
 
-    // Save result if tab info provided
-    if (data.tabUrl) {
-      await storageManager.saveParsedData({
-        url: data.tabUrl,
-        inputData: data.inputData,
-        outputSchema: data.outputSchema,
-        parsedData: result.parsedData,
-        metadata: result.metadata,
-        schemaUsed: data.schemaName || 'custom'
-      });
+    if (parseResponse.success && data.tabUrl) {
+      if (self.storageManager?.saveParsedData) { // Retain compatibility if saveParsedData exists
+        await self.storageManager.saveParsedData({
+          url: data.tabUrl,
+          inputData: data.text || data.inputData,
+          outputSchema: data.schema || data.outputSchema,
+          parsedData: parseResponse.result, // Use .result
+          // metadata: parseResponse.usage, // Store usage
+          schemaUsed: data.schemaName || (data.schemaId ? `SchemaID: ${data.schemaId}` : 'Custom Schema')
+        });
+      }
     }
-
-    return result;
+    return parseResponse; // This is ParseResponse {success, result?, error?, usage?}
   }
 
-  async showParseResult(result, tab) {
-    const settings = await storageManager.getSettings();
+  async showParseResult(parseResp, tab, schemaName = 'Parse') {
+    // parseResp is ParseResponse = { success: boolean, result?: object, error?: string, usage?: object }
+    const settings = await self.storageService.loadSetting('settings', { autoOpenResults: true, showNotifications: true });
     
-    if (settings.autoOpenResults) {
+    if (settings.autoOpenResults && parseResp.success) {
       await this.openSidePanel(tab.id);
     }
     
     if (settings.showNotifications) {
-      await this.showNotification(
-        'Parse Complete',
-        `Successfully parsed with ${result.metadata.confidence}% confidence`
-      );
+      if (parseResp.success) {
+        const fieldsExtracted = Object.keys(parseResp.result || {}).length;
+        await this.showNotification(
+          `${schemaName} Complete`,
+          `Successfully parsed ${fieldsExtracted} fields. Tokens: ${parseResp.usage?.total_tokens || 'N/A'}.`
+        );
+      } else {
+        await this.showNotification(
+          `${schemaName} Failed`,
+          parseResp.error || 'An unknown error occurred.'
+        );
+      }
     }
   }
 

@@ -9,10 +9,15 @@
     "copy-assets": "mkdir -p dist && cp -r src dist/ && cp -r assets dist/ && cp manifest.json dist/",
     "package": "npm run build && cd dist && zip -r ../parserator-chrome-extension.zip .",
     "dev": "echo 'Load the extension in Chrome from the root directory'",
-    "clean": "rm -rf dist parserator-chrome-extension.zip"
+    "clean": "rm -rf dist parserator-chrome-extension.zip",
+    "test": "jest"
   },
   "dependencies": {
     "@parserator/browser-sdk": "file:../packages/browser-sdk"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-chrome": "^0.8.0"
   },
   "keywords": [
     "chrome-extension",

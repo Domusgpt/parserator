@@ -214,6 +214,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
+    "test:unit": "jest --roots src/services",
     "package": "vsce package --out parserator-$(node -p 'require(\"./package.json\").version').vsix",
     "deploy": "vsce publish"
   },

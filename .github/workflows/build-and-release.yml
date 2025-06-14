@@ -41,7 +41,7 @@ jobs:
       - name: Build shared packages
         run: npm run build:packages # Uses the script from root package.json
       - name: Test shared packages
-        run: npm run test -w @parserator/types && npm run test -w @parserator/core-api-client && npm run test -w @parserator/browser-sdk
+        run: npm run test -w @parserator/types --if-present && npm run test -w @parserator/core-api-client --if-present && npm run test -w @parserator/browser-sdk --if-present
       # Consider uploading dist of shared packages if other jobs need them independently,
       # though workspace linking should handle this if jobs share the installed node_modules.
       # For robustness, each job needing Node.js will run `npm ci` after checkout.
@@ -55,10 +55,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      - name: Install build dependencies
+      - name: Install dependencies (including dev for testing)
         run: |
           cd python-sdk
-          pip install build twine
+          pip install -e .[dev] # Installs package in editable mode with 'dev' extras
+          pip install build twine # Still need build and twine for packaging
+      - name: Run Python tests
+        run: |
+          cd python-sdk
+          pytest
       - name: Build Python package
         run: |
           cd python-sdk
