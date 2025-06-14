@@ -112,9 +112,31 @@ npm run update-workflow execute minor chrome vscode pypi npm
 
 ## 📦 PACKAGE MANAGEMENT
 
-### Monorepo Structure Created
-**Root:** `package.json` with workspace management
-**Workspaces:** Chrome, VS Code, Dashboard, Node SDK, MCP Server
+### Monorepo Structure Created & Enhanced
+**Root:** `package.json` (potentially configured for npm/pnpm workspaces, though not explicitly detailed in previous steps).
+**Packages Directory (`packages/`):** A new dedicated directory for shared internal libraries has been introduced to enhance modularity and code reuse across different components of the Parserator ecosystem.
+  - **`@parserator/types`**: Contains common TypeScript definitions for API request/response objects and other shared data structures. This ensures type consistency between the frontend components, SDKs, and the API itself.
+  - **`@parserator/core-api-client`**: A TypeScript-based core client for the Parserator API. It handles HTTP requests (using `axios` internally), error mapping, and provides a typed interface for API interactions. Designed for server-side or Node.js environments.
+  - **`@parserator/browser-sdk`**: A lightweight SDK specifically for browser environments. It wraps the `@parserator/core-api-client` and provides a convenient way for web applications (like the Dashboard and Chrome Extension) to interact with the API.
+  - **`@parserator/node-sdk`**: (Refactored) The existing Node.js SDK has been refactored to utilize the `@parserator/core-api-client` and `@parserator/types`, streamlining its implementation and aligning it with the shared infrastructure.
+
+**Workspaces/Components:**
+The main application components now leverage these shared packages:
+- **Chrome Extension (`chrome-extension/`)**: Uses `@parserator/browser-sdk`.
+- **VS Code Extension (`vscode-extension/`)**: Uses `@parserator/core-api-client` and `@parserator/types`.
+- **Dashboard (`dashboard/`)**: Uses `@parserator/browser-sdk` (or could use `@parserator/core-api-client` if data fetching is primarily server-side via Next.js API routes).
+- **Node SDK (`node-sdk/`)**: Now a wrapper around `@parserator/core-api-client`.
+- **API (`api/`)**: Aligns its request/response structures with `@parserator/types`.
+- **MCP Server (`mcp-server/`)**: (Future consideration) Could potentially use `@parserator/core-api-client` or `@parserator/types` if its interactions with the main API need to be standardized with these new packages.
+- **Python SDK (`python-sdk/`)**: Remains independent of these TypeScript-specific shared packages but should maintain conceptual alignment with the API structures defined in `@parserator/types`.
+- **JetBrains Plugin (`jetbrains-plugin/`)**: A Kotlin project; its data classes for API interaction should be manually synchronized with `@parserator/types`.
+
+**Benefits of Shared Packages:**
+- **Modularity**: Isolates common API logic and type definitions.
+- **Code Reuse**: Reduces duplication across different JavaScript/TypeScript clients.
+- **Consistency**: Ensures that all components interacting with the API use the same data structures and client logic.
+- **Maintainability**: Updates to API interaction logic or types can be made in one place and propagated to consumers.
+- **Developer Experience**: Provides clear, typed interfaces for interacting with the Parserator API.
 
 ### Build Scripts Available
 ```bash

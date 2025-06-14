@@ -12,7 +12,7 @@
     "clean": "rm -rf dist parserator-chrome-extension.zip"
   },
   "dependencies": {
-    "parserator-sdk": "^1.0.0"
+    "@parserator/browser-sdk": "file:../packages/browser-sdk"
   },
   "keywords": [
     "chrome-extension",

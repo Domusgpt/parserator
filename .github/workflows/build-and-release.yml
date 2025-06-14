@@ -12,48 +12,115 @@ on:
         default: 'latest'
 
 jobs:
-  build-python-sdk:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      node-version: ${{ steps.node.outputs.node-version }}
+    steps:
+      - name: Set up Node.js
+        id: node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # Specify desired Node.js version
+      - name: Display Node.js version
+        run: echo "Node.js version: ${{ steps.node.outputs.node-version }}"
+
+
+  build-shared-packages:
+    runs-on: ubuntu-latest
+    needs: setup
     steps:
       - uses: actions/checkout@v3
-      
+      - name: Use Node.js ${{ needs.setup.outputs.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ needs.setup.outputs.node-version }}
+          cache: 'npm'
+      - name: Install dependencies at root
+        run: npm ci
+      - name: Build shared packages
+        run: npm run build:packages # Uses the script from root package.json
+      - name: Test shared packages
+        run: npm run test -w @parserator/types && npm run test -w @parserator/core-api-client && npm run test -w @parserator/browser-sdk
+      # Consider uploading dist of shared packages if other jobs need them independently,
+      # though workspace linking should handle this if jobs share the installed node_modules.
+      # For robustness, each job needing Node.js will run `npm ci` after checkout.
+
+  build-python-sdk:
+    runs-on: ubuntu-latest
+    needs: setup # Does not depend on JS shared packages directly
+    steps:
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          
       - name: Install build dependencies
         run: |
           cd python-sdk
           pip install build twine
-          
       - name: Build Python package
         run: |
           cd python-sdk
           python -m build
-          
       - name: Upload Python artifacts
         uses: actions/upload-artifact@v3
         with:
           name: python-sdk-dist
           path: python-sdk/dist/
 
-  build-chrome-extension:
+  build-node-sdk: # Added job for node-sdk
     runs-on: ubuntu-latest
+    needs: [setup, build-shared-packages]
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Set up Node.js
+      - name: Use Node.js ${{ needs.setup.outputs.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          
+          node-version: ${{ needs.setup.outputs.node-version }}
+          cache: 'npm'
+      - name: Install dependencies at root
+        run: npm ci
+      - name: Build Node SDK
+        run: npm run build -w parserator-sdk # Assumes 'parserator-sdk' is the name in its package.json
+      - name: Test Node SDK
+        run: npm run test -w parserator-sdk
+      # No artifact upload unless it's being published independently from here
+
+  build-api: # Added job for api
+    runs-on: ubuntu-latest
+    needs: [setup, build-shared-packages]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ needs.setup.outputs.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ needs.setup.outputs.node-version }}
+          cache: 'npm'
+      - name: Install dependencies at root
+        run: npm ci
+      - name: Build API
+        run: npm run build -w @parserator/api # Assumes '@parserator/api' is the name in its package.json
+      - name: Test API
+        run: npm run test -w @parserator/api --if-present # Only if test script exists (currently placeholder)
+      # No artifact upload typically for Firebase functions, deployment is separate
+
+  build-chrome-extension:
+    runs-on: ubuntu-latest
+    needs: [setup, build-shared-packages]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ needs.setup.outputs.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ needs.setup.outputs.node-version }}
+          cache: 'npm'
+      - name: Install dependencies at root
+        run: npm ci
       - name: Build Chrome extension
-        run: |
-          cd chrome-extension
-          npm ci
-          npm run package
-          
+        run: npm run build:chrome # Uses script from root package.json
+      - name: Test Chrome Extension (if script exists)
+        run: npm run test -w parserator-chrome-extension --if-present # Placeholder, actual tests would need specific setup
       - name: Upload Chrome extension artifact
         uses: actions/upload-artifact@v3
         with:
@@ -62,24 +129,22 @@ jobs:
 
   build-vscode-extension:
     runs-on: ubuntu-latest
+    needs: [setup, build-shared-packages]
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Set up Node.js
+      - name: Use Node.js ${{ needs.setup.outputs.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          
-      - name: Install vsce
+          node-version: ${{ needs.setup.outputs.node-version }}
+          cache: 'npm'
+      - name: Install dependencies at root # Includes devDependencies for vsce
+        run: npm ci
+      - name: Install vsce globally (alternative to workspace dev dep if needed by script)
         run: npm install -g vsce
-        
       - name: Build VS Code extension
-        run: |
-          cd vscode-extension
-          npm ci
-          npm run compile
-          npm run package
-          
+        run: npm run build:vscode # Uses script from root package.json
+      - name: Test VS Code Extension
+        run: npm run test -w parserator # 'parserator' is the name in vscode-extension/package.json
       - name: Upload VS Code extension artifact
         uses: actions/upload-artifact@v3
         with:
@@ -88,20 +153,20 @@ jobs:
 
   build-dashboard:
     runs-on: ubuntu-latest
+    needs: [setup, build-shared-packages]
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Set up Node.js
+      - name: Use Node.js ${{ needs.setup.outputs.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          
+          node-version: ${{ needs.setup.outputs.node-version }}
+          cache: 'npm'
+      - name: Install dependencies at root
+        run: npm ci
       - name: Build dashboard
-        run: |
-          cd dashboard
-          npm ci
-          npm run build
-          
+        run: npm run build:dashboard # Uses script from root package.json
+      - name: Test Dashboard (if script exists)
+        run: npm run test -w @parserator/dashboard --if-present # Placeholder, actual tests would need specific setup
       - name: Upload dashboard artifact
         uses: actions/upload-artifact@v3
         with:
@@ -110,23 +175,18 @@ jobs:
 
   build-jetbrains-plugin:
     runs-on: ubuntu-latest
+    needs: setup # Does not depend on JS shared packages
     steps:
       - uses: actions/checkout@v3
-      
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: '17' # Updated to 17 as per jetbrains-plugin/build.gradle.kts
           distribution: 'temurin'
-          
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
-        
       - name: Build JetBrains plugin
-        run: |
-          cd jetbrains-plugin
-          ./gradlew buildPlugin
-          
+        run: npm run build:jetbrains # Uses script from root package.json
       - name: Upload JetBrains plugin artifact
         uses: actions/upload-artifact@v3
         with:
@@ -134,7 +194,14 @@ jobs:
           path: jetbrains-plugin/build/distributions/*.zip
 
   create-release:
-    needs: [build-python-sdk, build-chrome-extension, build-vscode-extension, build-dashboard, build-jetbrains-plugin]
+    needs:
+      - build-python-sdk
+      - build-node-sdk # Added node-sdk
+      - build-api # Added api (though it doesn't produce typical release artifact)
+      - build-chrome-extension
+      - build-vscode-extension
+      - build-dashboard
+      - build-jetbrains-plugin
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:

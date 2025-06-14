@@ -112,18 +112,30 @@ POST https://app-5108296280.us-central1.run.app/v1/parse
 parserator-launch-ready/
 ├── ***LOOKFIRST***.md          # Handoff briefing
 ├── CLAUDE.md                   # This file (main context)
-├── api/                        # Firebase Cloud Functions (LIVE)
-├── node-sdk/                   # Published NPM package
-├── python-sdk/                 # Ready for PyPI
+├── packages/                   # Shared internal TypeScript packages
+│   ├── types/                  # Core type definitions (ParseRequest, ParseResponse, etc.)
+│   ├── core-api-client/        # Main API client for Node.js/server-side use
+│   ├── browser-sdk/            # SDK for browser environments (wraps core-api-client)
+├── api/                        # Firebase Cloud Functions (LIVE) - Implements API, aligns with @parserator/types
+├── node-sdk/                   # Published NPM package - Wraps @parserator/core-api-client
+├── python-sdk/                 # Ready for PyPI - Conceptually aligns with @parserator/types
 ├── mcp-server/                 # Published MCP server
-├── dashboard/                  # Static React build
-├── chrome-extension/           # Built v1.0.2
-├── vscode-extension/           # Built v1.0.0  
-├── jetbrains-plugin/           # Complete Kotlin source
+├── dashboard/                  # Static React build - Uses @parserator/browser-sdk
+├── chrome-extension/           # Built v1.0.2 - Uses @parserator/browser-sdk
+├── vscode-extension/           # Built v1.0.0 - Uses @parserator/core-api-client
+├── jetbrains-plugin/           # Complete Kotlin source - Conceptually aligns with @parserator/types
 ├── examples/                   # Integration examples
 ├── testing/                    # Validation scripts
 └── docs/                       # Documentation
 ```
+
+**Role of New Shared Packages:**
+- **`@parserator/types`**: Provides consistent TypeScript interfaces for all API interactions (requests, responses, common objects like `SavedSchema`). Essential for type safety and reducing data structure mismatches across the JavaScript/TypeScript parts of the ecosystem. AI agents interacting with the API via JavaScript/TypeScript clients should use these types.
+- **`@parserator/core-api-client`**: A robust, typed API client built with `axios`. It's the foundation for JavaScript/TypeScript based API communication from server-side environments (like VS Code extensions, or Next.js API routes if the dashboard used them).
+- **`@parserator/browser-sdk`**: A thin wrapper around the `core-api-client`, specifically packaged and configured for browser use. It's used by the Chrome Extension and the Dashboard frontend.
+- **`@parserator/node-sdk`**: Now refactored to use the `core-api-client`, making it a more specialized Node.js interface if specific Node features (like automatic .env loading in its example) are needed beyond what `core-api-client` provides.
+
+These packages centralize common logic, improve maintainability, and ensure a more consistent developer experience when building integrations or new components for Parserator.
 
 ## 🎪 NEW SESSION SETUP
 

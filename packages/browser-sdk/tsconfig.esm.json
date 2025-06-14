@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.base.json", // Using a base for common settings
+  "compilerOptions": {
+    "module": "ESNext",
+    "outDir": "./dist/esm",
+    "target": "ES2020", // Modern ES version for browsers
+  },
+  "include": ["src/**/*.ts"]
+}

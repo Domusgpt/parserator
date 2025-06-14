@@ -232,7 +232,8 @@
     "vsce": "^2.15.0"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "@parserator/core-api-client": "file:../packages/core-api-client",
+    "@parserator/types": "file:../packages/types"
   },
   "repository": {
     "type": "git",

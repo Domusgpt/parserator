@@ -30,13 +30,17 @@ parserator-launch-ready/
 ├── ***LOOKFIRST***.md          # HANDOFF BRIEFING - READ THIS FIRST
 ├── CLAUDE.md                   # Main project context for Claude
 ├── README.md                   # This file
+├── packages/                   # Shared internal packages
+│   ├── types/                  # TypeScript definitions for API request/response objects
+│   ├── core-api-client/        # Core TypeScript API client for server-side/Node.js usage
+│   ├── browser-sdk/            # Browser-specific SDK wrapping core-api-client
 ├── api/                        # Firebase Cloud Functions (LIVE)
-├── node-sdk/                   # Published NPM package
+├── node-sdk/                   # Published NPM package (now wraps core-api-client)
 ├── python-sdk/                 # Ready for PyPI (twine upload dist/*)
 ├── mcp-server/                 # Published MCP server
-├── dashboard/                  # Static React build (deploy out/ folder)
-├── chrome-extension/           # Built v1.0.2 (submit .zip to Chrome Web Store)
-├── vscode-extension/           # Built v1.0.0 (submit .vsix to VS Code)
+├── dashboard/                  # Static React build (deploy out/ folder, uses browser-sdk)
+├── chrome-extension/           # Built v1.0.2 (submit .zip to Chrome Web Store, uses browser-sdk)
+├── vscode-extension/           # Built v1.0.0 (submit .vsix to VS Code, uses core-api-client)
 ├── jetbrains-plugin/           # Complete Kotlin source (needs build)
 ├── examples/                   # Integration examples
 ├── testing/                    # Validation scripts

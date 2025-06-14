@@ -39,7 +39,7 @@ export class FormatUtils {
 	 */
 	static formatFileSize(bytes: number): string {
 		const sizes = ['B', 'KB', 'MB', 'GB'];
-		if (bytes === 0) return '0 B';
+		if (bytes === 0) { return '0 B'; }
 		const i = Math.floor(Math.log(bytes) / Math.log(1024));
 		return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
 	}
@@ -162,12 +162,14 @@ export class FormatUtils {
 	 * Format parse result summary
 	 */
 	static formatParseResultSummary(result: ParseResult): string {
-		const confidence = this.formatConfidence(result.metadata.confidence);
-		const time = this.formatProcessingTime(result.metadata.processingTimeMs);
-		const tokens = this.formatTokens(result.metadata.tokensUsed);
-		const fieldsCount = Object.keys(result.parsedData).length;
+		// Adapt to new ParseResponse structure. Some information is no longer available.
+		// const confidence = result.metadata?.confidence ? this.formatConfidence(result.metadata.confidence) : 'N/A'; // Not available
+		// const time = result.metadata?.processingTimeMs ? this.formatProcessingTime(result.metadata.processingTimeMs) : 'N/A'; // Not available
+		const tokens = result.usage?.total_tokens !== undefined ? this.formatTokens(result.usage.total_tokens) : 'N/A';
+		const fieldsCount = Object.keys(result.result || {}).length;
 
-		return `✅ ${fieldsCount} fields extracted with ${confidence} confidence in ${time} (${tokens} tokens)`;
+		// return `✅ ${fieldsCount} fields extracted with ${confidence} confidence in ${time} (${tokens} tokens)`;
+		return `✅ ${fieldsCount} fields extracted (${tokens} tokens used)`;
 	}
 
 	/**

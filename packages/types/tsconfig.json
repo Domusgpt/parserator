@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2018", // Target modern ECMAScript version
+    "module": "commonjs", // Standard module system for Node.js compatibility
+    "lib": ["ESNext"], // Include modern ES features
+    "declaration": true, // Generate .d.ts files
+    "declarationMap": true, // Generate sourcemaps for .d.ts files
+    "sourceMap": true, // Generate .js.map sourcemap files
+    "outDir": "./dist", // Output directory for compiled files
+    "rootDir": "./", // Specify root directory of source files (implicitly current dir)
+    "strict": true, // Enable all strict type-checking options
+    "esModuleInterop": true, // Enables emit interoperability between CommonJS and ES Modules
+    "skipLibCheck": true, // Skip type checking of all declaration files (*.d.ts)
+    "forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file.
+    "moduleResolution": "node", // Resolve modules using Node.js style
+    // Recommended for libraries:
+    "declarationDir": "./dist", // Output directory for declaration files
+    "resolveJsonModule": true, // Allows importing .json files
+    "isolatedModules": true, // Ensures each file can be transpiled independently
+    "allowSyntheticDefaultImports": true, // Allow default imports from modules with no default export
+  },
+  "include": [
+    "index.ts" // Only compile index.ts as the entry point
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

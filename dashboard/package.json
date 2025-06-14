@@ -28,7 +28,9 @@
     "react-hot-toast": "^2.4.0",
     "react-hook-form": "^7.48.0",
     "zod": "^3.22.0",
-    "@hookform/resolvers": "^3.3.0"
+    "@hookform/resolvers": "^3.3.0",
+    "@parserator/browser-sdk": "file:../packages/browser-sdk",
+    "@parserator/types": "file:../packages/types"
   },
   "devDependencies": {
     "eslint": "^8.52.0",

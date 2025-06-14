@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    // "target": "ES2020", // Target can be overridden by extending configs
+    "lib": ["DOM", "ES2020"], // DOM for browser environment
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true, // Good practice for libraries/transpilation
+    "allowSyntheticDefaultImports": true,
+    // "declaration": true, // Handled by tsconfig.types.json
+    // "declarationMap": true, // Handled by tsconfig.types.json
+    // "outDir": "./dist", // Overridden by specific configs
+    "rootDir": "./src"
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/__tests__"
+  ]
+}

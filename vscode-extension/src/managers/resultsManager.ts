@@ -37,43 +37,45 @@ export class ResultsManager {
 			},
 			
 			// Main parsed data
-			parsed_data: result.parsedData,
+			// Use result.result for parsed data, default to empty object if not present
+			parsed_data: result.result || {},
 			
 			// Metadata and analytics
+			// Most of the old metadata fields are not available in the new ParseResponse.
+			// We can include token usage if available.
 			metadata: {
-				confidence_score: result.metadata.confidence,
-				processing_time_ms: result.metadata.processingTimeMs,
-				tokens_used: result.metadata.tokensUsed,
-				complexity: result.metadata.architectPlan.estimatedComplexity,
-				architect_confidence: result.metadata.architectPlan.architectConfidence,
-				stage_breakdown: result.metadata.stageBreakdown
+				// confidence_score: result.metadata?.confidence, // Not available
+				// processing_time_ms: result.metadata?.processingTimeMs, // Not available
+				tokens_used: result.usage?.total_tokens,
+				prompt_tokens: result.usage?.prompt_tokens,
+				completion_tokens: result.usage?.completion_tokens,
+				// complexity: result.metadata?.architectPlan?.estimatedComplexity, // Not available
+				// architect_confidence: result.metadata?.architectPlan?.architectConfidence, // Not available
+				// stage_breakdown: result.metadata?.stageBreakdown // Not available
 			},
 			
-			// Architecture plan details
-			architect_plan: {
-				total_steps: result.metadata.architectPlan.totalSteps,
-				steps: result.metadata.architectPlan.steps.map(step => ({
-					field: step.targetKey,
-					description: step.description,
-					search_instruction: step.searchInstruction,
-					validation_type: step.validationType,
-					required: step.isRequired
-				}))
-			}
+			// Architecture plan details - Not available in new ParseResponse
+			// architect_plan: {
+			// 	total_steps: result.metadata?.architectPlan?.totalSteps,
+			// 	steps: result.metadata?.architectPlan?.steps.map(step => ({
+			// 		field: step.targetKey,
+			// 		description: step.description,
+			// 		search_instruction: step.searchInstruction,
+			// 		validation_type: step.validationType,
+			// 		required: step.isRequired
+			// 	}))
+			// }
 		};
 
-		// Add billing info if available
-		if (result.billing) {
-			output.metadata = {
-				...output.metadata,
-				billing: {
-					subscription_tier: result.billing.subscriptionTier,
-					monthly_usage: result.billing.monthlyUsage,
-					monthly_limit: result.billing.monthlyLimit,
-					api_key_name: result.billing.apiKeyName
-				}
-			} as any;
-		}
+		// Billing info is not available in the new ParseResponse
+		// if (result.billing) {
+		// 	(output as any).metadata.billing = {
+		// 		subscription_tier: result.billing.subscriptionTier,
+		// 		monthly_usage: result.billing.monthlyUsage,
+		// 		monthly_limit: result.billing.monthlyLimit,
+		// 		api_key_name: result.billing.apiKeyName
+		// 	};
+		// }
 
 		return JSON.stringify(output, null, 2);
 	}
@@ -96,17 +98,20 @@ export class ResultsManager {
 	}
 
 	async copyResultsToClipboard(result: ParseResult): Promise<void> {
-		const jsonString = JSON.stringify(result.parsedData, null, 2);
+		// Use result.result for parsed data
+		const jsonString = JSON.stringify(result.result || {}, null, 2);
 		await vscode.env.clipboard.writeText(jsonString);
 		vscode.window.showInformationMessage('Parsed data copied to clipboard!');
 	}
 
 	generateSummary(result: ParseResult): string {
-		const confidence = (result.metadata.confidence * 100).toFixed(1);
-		const processingTime = result.metadata.processingTimeMs;
-		const tokensUsed = result.metadata.tokensUsed;
-		const fieldsExtracted = Object.keys(result.parsedData).length;
+		// Adapt to new ParseResponse structure. Some information is no longer available.
+		// const confidence = (result.metadata.confidence * 100).toFixed(1); // Not available
+		// const processingTime = result.metadata.processingTimeMs; // Not available
+		const tokensUsed = result.usage?.total_tokens || 'N/A';
+		const fieldsExtracted = Object.keys(result.result || {}).length;
 
-		return `✅ Parsing completed with ${confidence}% confidence in ${processingTime}ms using ${tokensUsed} tokens. Extracted ${fieldsExtracted} fields.`;
+		// return `✅ Parsing completed with ${confidence}% confidence in ${processingTime}ms using ${tokensUsed} tokens. Extracted ${fieldsExtracted} fields.`;
+		return `✅ Parsing completed. Used ${tokensUsed} tokens. Extracted ${fieldsExtracted} fields.`;
 	}
 }

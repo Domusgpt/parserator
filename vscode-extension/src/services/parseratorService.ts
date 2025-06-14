@@ -1,304 +1,233 @@
 import * as vscode from 'vscode';
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import {
+    ParseratorApiClient,
+    ParseRequest as CoreParseRequest, // Renaming to avoid conflict with local ParseOptions if any
+    ParseResponse as CoreParseResponse,
+    SavedSchema, // Assuming this is what the service might manage or refer to
+    UpsertSchemaRequest,
+    ApiError
+} from '@parserator/core-api-client';
+import { SchemaObject } from '@parserator/types'; // For schema definition
 
+// Local type for parse options, can include VSCode specific things like timeout from config
 export interface ParseOptions {
-	inputData: string;
-	outputSchema: Record<string, any>;
-	instructions?: string;
-	timeout?: number;
+    text: string;
+    schema: SchemaObject;
+    schemaId?: string; // Optional: ID of a pre-saved schema
+    model?: string;    // Optional: Specify a model to use
+    timeout?: number;  // Optional: VSCode specific timeout override
 }
 
-export interface ParseResult {
-	success: true;
-	parsedData: Record<string, any>;
-	metadata: {
-		architectPlan: {
-			steps: Array<{
-				targetKey: string;
-				description: string;
-				searchInstruction: string;
-				validationType: string;
-				isRequired: boolean;
-			}>;
-			totalSteps: number;
-			estimatedComplexity: 'low' | 'medium' | 'high';
-			architectConfidence: number;
-		};
-		confidence: number;
-		tokensUsed: number;
-		processingTimeMs: number;
-		architectTokens: number;
-		extractorTokens: number;
-		stageBreakdown: {
-			architect: {
-				timeMs: number;
-				tokens: number;
-				confidence: number;
-			};
-			extractor: {
-				timeMs: number;
-				tokens: number;
-				confidence: number;
-			};
-		};
-	};
-	billing?: {
-		subscriptionTier: string;
-		monthlyUsage: number;
-		monthlyLimit: number;
-		apiKeyName?: string;
-	};
+// We can map CoreParseResponse to a more specific ParseResult if needed,
+// or use CoreParseResponse directly if it matches the extension's needs.
+// For now, let's assume CoreParseResponse is detailed enough.
+export type ParseResult = CoreParseResponse;
+
+
+// Custom error class for the VSCode extension, can wrap ApiError from core-api-client
+export class VSCodeParseratorError extends Error {
+    public code: string;
+    public details?: any;
+    public stage?: string; // If your API errors include a 'stage'
+
+    constructor(message: string, code: string, details?: any, stage?: string) {
+        super(message);
+        this.name = 'VSCodeParseratorError';
+        this.code = code;
+        this.details = details;
+        this.stage = stage; // Assign if relevant
+    }
+
+    static fromApiError(apiError: ApiError): VSCodeParseratorError {
+        return new VSCodeParseratorError(apiError.message, apiError.code, apiError.details, (apiError as any).stage);
+    }
 }
 
-export interface ParseError {
-	success: false;
-	error: {
-		code: string;
-		message: string;
-		stage: 'validation' | 'architect' | 'extractor' | 'orchestration';
-		details?: Record<string, any>;
-	};
-}
-
-export interface UsageStats {
-	success: true;
-	usage: {
-		subscriptionTier: string;
-		monthlyUsage: number;
-		monthlyLimit: number;
-		remainingRequests: number;
-		usagePercentage: number;
-	};
-	apiKey: {
-		name?: string;
-		id: string;
-	};
-}
-
-export class ParseratorError extends Error {
-	constructor(
-		message: string,
-		public code: string,
-		public stage?: string,
-		public details?: Record<string, any>
-	) {
-		super(message);
-		this.name = 'ParseratorError';
-	}
-}
 
 export class ParseratorService {
-	private http: AxiosInstance | null = null;
-	private config: {
-		apiKey: string;
-		baseUrl: string;
-		timeout: number;
-	} | null = null;
+    private apiClient: ParseratorApiClient | null = null;
+    private apiKey: string | null = null;
+    private baseUrl: string | null = null;
+    // timeout is part of client config now
 
-	constructor() {
-		this.updateConfiguration();
-	}
+    constructor() {
+        this.updateConfiguration();
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('parserator.apiKey') || e.affectsConfiguration('parserator.baseUrl')) {
+                this.updateConfiguration();
+            }
+        });
+    }
 
-	updateConfiguration() {
-		const vscodeConfig = vscode.workspace.getConfiguration('parserator');
-		const apiKey = vscodeConfig.get('apiKey') as string;
-		const baseUrl = vscodeConfig.get('baseUrl') as string || 'https://api.parserator.com';
-		const timeout = vscodeConfig.get('timeout') as number || 30000;
+    updateConfiguration() {
+        const vscodeConfig = vscode.workspace.getConfiguration('parserator');
+        const apiKey = vscodeConfig.get('apiKey') as string | undefined;
+        const baseUrl = vscodeConfig.get('baseUrl') as string | undefined; // core-api-client has a default
 
-		if (!apiKey) {
-			this.http = null;
-			this.config = null;
-			return;
-		}
+        if (apiKey && (apiKey !== this.apiKey || baseUrl !== this.baseUrl)) {
+            this.apiKey = apiKey;
+            this.baseUrl = baseUrl || null; // Pass null to use SDK default
+            try {
+                this.apiClient = new ParseratorApiClient(this.baseUrl || undefined, this.apiKey);
+                console.log('ParseratorService: ApiClient reconfigured.');
+            } catch (error) {
+                this.apiClient = null;
+                console.error('ParseratorService: Failed to create ApiClient', error);
+                vscode.window.showErrorMessage('Failed to configure Parserator API client. Check settings.');
+            }
+        } else if (!apiKey) {
+            this.apiClient = null;
+            this.apiKey = null;
+            this.baseUrl = null;
+        }
+    }
 
-		this.config = { apiKey, baseUrl, timeout };
+    private ensureClient(): ParseratorApiClient {
+        if (!this.apiClient) {
+            // Attempt to reconfigure if the client is missing (e.g. API key was set after startup)
+            this.updateConfiguration();
+            if (!this.apiClient) {
+                 throw new VSCodeParseratorError(
+                    'Parserator API client is not configured. Please set your API key in settings.',
+                    'NOT_CONFIGURED'
+                );
+            }
+        }
+        return this.apiClient;
+    }
 
-		this.http = axios.create({
-			baseURL: baseUrl,
-			timeout: timeout,
-			headers: {
-				'Authorization': `Bearer ${apiKey}`,
-				'Content-Type': 'application/json',
-				'User-Agent': 'parserator-vscode-extension/1.0.0'
-			}
-		});
+    async parse(options: ParseOptions): Promise<ParseResult> {
+        const client = this.ensureClient();
+        this.validateParseOptions(options); // Keep local validation for quick feedback
 
-		// Add response interceptor for error handling
-		this.http.interceptors.response.use(
-			(response) => response,
-			(error) => {
-				if (error.response?.data) {
-					const errorData = error.response.data;
-					throw new ParseratorError(
-						errorData.error?.message || 'Unknown API error',
-						errorData.error?.code || 'API_ERROR',
-						errorData.error?.stage,
-						errorData.error?.details
-					);
-				}
-				throw new ParseratorError(
-					error.message || 'Network error',
-					'NETWORK_ERROR'
-				);
-			}
-		);
-	}
+        const request: CoreParseRequest = {
+            text: options.text,
+            schema: options.schema,
+            schemaId: options.schemaId,
+            model: options.model,
+        };
 
-	private ensureConfigured(): void {
-		if (!this.http || !this.config) {
-			throw new ParseratorError(
-				'Parserator not configured. Please set your API key in settings.',
-				'NOT_CONFIGURED'
-			);
-		}
-	}
+        // Note: The core-api-client handles its own timeout based on its constructor.
+        // If a per-request timeout is needed, the core-api-client's methods would need to support an options bag.
+        // For now, we assume the client's configured timeout is used.
+        // If options.timeout is present, it's currently not overriding the client's default.
 
-	async parse(options: ParseOptions): Promise<ParseResult> {
-		this.ensureConfigured();
-		this.validateParseOptions(options);
+        try {
+            const response = await client.parse(request);
+            // The new client.parse already returns ParseResponse which includes { success, result?, error? }
+            // It throws ApiError on failure, which we will catch.
+            return response;
+        } catch (error) {
+            // Check if it looks like an ApiError (duck typing)
+            if (typeof error === 'object' && error !== null && 'code' in error && 'message' in error) {
+                throw VSCodeParseratorError.fromApiError(error as ApiError);
+            }
+            // Fallback for unexpected errors
+            throw new VSCodeParseratorError(
+                (error as Error).message || 'An unexpected error occurred during parsing.',
+                'UNEXPECTED_ERROR'
+            );
+        }
+    }
 
-		const requestConfig: AxiosRequestConfig = {
-			timeout: options.timeout || this.config!.timeout
-		};
+    // Example: Refactoring getSchema (if it were part of the old service)
+    async getSchema(schemaId: string): Promise<SavedSchema> {
+        const client = this.ensureClient();
+        try {
+            return await client.getSchema(schemaId);
+        } catch (error) {
+            throw VSCodeParseratorError.fromApiError(error as ApiError);
+        }
+    }
 
-		const requestBody = {
-			inputData: options.inputData,
-			outputSchema: options.outputSchema,
-			instructions: options.instructions
-		};
+    // Example: Refactoring upsertSchema (if it were part of the old service)
+    async upsertSchema(schemaData: UpsertSchemaRequest, schemaId?: string): Promise<SavedSchema> {
+        const client = this.ensureClient();
+        try {
+            return await client.upsertSchema(schemaData, schemaId);
+        } catch (error) {
+            throw VSCodeParseratorError.fromApiError(error as ApiError);
+        }
+    }
 
-		try {
-			const response = await this.http!.post('/v1/parse', requestBody, requestConfig);
-			
-			if (!response.data.success) {
-				throw new ParseratorError(
-					response.data.error?.message || 'Parse operation failed',
-					response.data.error?.code || 'PARSE_FAILED',
-					response.data.error?.stage,
-					response.data.error?.details
-				);
-			}
+    async testConnection(): Promise<boolean> {
+        // Re-check config as API key might have been removed
+        const vscodeConfig = vscode.workspace.getConfiguration('parserator');
+        const apiKey = vscodeConfig.get('apiKey') as string | undefined;
+        if (!apiKey) {
+            console.log('ParseratorService: No API key for testConnection.');
+            return false;
+        }
 
-			return response.data as ParseResult;
-		} catch (error) {
-			if (error instanceof ParseratorError) {
-				throw error;
-			}
-			throw new ParseratorError(
-				'Failed to parse data. Please check your input and try again.',
-				'PARSE_REQUEST_FAILED',
-				undefined,
-				{ originalError: (error as Error).message }
-			);
-		}
-	}
+        // Ensure client is attempted to be created with current config
+        const client = this.ensureClient();
 
-	async getUsage(): Promise<UsageStats> {
-		this.ensureConfigured();
+        try {
+            // The core-api-client's testConnection might be different or non-existent.
+            // A common way to test is to make a lightweight request, e.g., fetching user info or schemas.
+            // Here, we try getSchema with a dummy ID, expecting an ApiError but not a network error.
+            await client.getSchema('__test_connection__');
+            // If it doesn't throw or throws an expected "not found" error, connection is fine.
+            return true;
+        } catch (error) {
+            const apiError = error as ApiError;
+            if (apiError.code && apiError.code !== 'network_error' && apiError.code !== 'request_setup_error') {
+                // Any API error other than network/setup means we reached the API
+                console.log('ParseratorService: Test connection successful (API responded). Error was:', apiError.message);
+                return true;
+            }
+            console.error('ParseratorService: Test connection failed:', error);
+            return false;
+        }
+    }
 
-		try {
-			const response = await this.http!.get('/v1/usage');
-			return response.data as UsageStats;
-		} catch (error) {
-			if (error instanceof ParseratorError) {
-				throw error;
-			}
-			throw new ParseratorError(
-				'Failed to fetch usage statistics',
-				'USAGE_REQUEST_FAILED',
-				undefined,
-				{ originalError: (error as Error).message }
-			);
-		}
-	}
-
-	async testConnection(): Promise<boolean> {
-		this.ensureConfigured();
-
-		try {
-			const response = await this.http!.get('/health');
-			return response.status === 200 && response.data.status === 'healthy';
-		} catch (error) {
-			return false;
-		}
-	}
-
-	async getApiInfo(): Promise<any> {
-		this.ensureConfigured();
-
-		try {
-			const response = await this.http!.get('/v1/info');
-			return response.data;
-		} catch (error) {
-			if (error instanceof ParseratorError) {
-				throw error;
-			}
-			throw new ParseratorError(
-				'Failed to fetch API information',
-				'INFO_REQUEST_FAILED',
-				undefined,
-				{ originalError: (error as Error).message }
-			);
-		}
-	}
-
+    // Local validation methods can be kept as they provide quick feedback in the editor.
 	private validateParseOptions(options: ParseOptions): void {
-		if (!options.inputData || typeof options.inputData !== 'string') {
-			throw new ParseratorError(
+		if (!options.text || typeof options.text !== 'string') {
+			throw new VSCodeParseratorError(
 				'inputData must be a non-empty string',
 				'INVALID_INPUT_DATA'
 			);
 		}
 
-		if (options.inputData.trim().length === 0) {
-			throw new ParseratorError(
+		if (options.text.trim().length === 0) {
+			throw new VSCodeParseratorError(
 				'inputData cannot be empty or only whitespace',
 				'EMPTY_INPUT_DATA'
 			);
 		}
 
-		if (options.inputData.length > 100000) {
-			throw new ParseratorError(
+		if (options.text.length > 100000) { // Example limit
+			throw new VSCodeParseratorError(
 				'inputData exceeds maximum length of 100KB',
 				'INPUT_TOO_LARGE'
 			);
 		}
 
-		if (!options.outputSchema || typeof options.outputSchema !== 'object') {
-			throw new ParseratorError(
+		if (!options.schema || typeof options.schema !== 'object') {
+			throw new VSCodeParseratorError(
 				'outputSchema must be a non-null object',
 				'INVALID_OUTPUT_SCHEMA'
 			);
 		}
 
-		if (Object.keys(options.outputSchema).length === 0) {
-			throw new ParseratorError(
+		if (Object.keys(options.schema).length === 0) {
+			throw new VSCodeParseratorError(
 				'outputSchema cannot be empty',
 				'EMPTY_OUTPUT_SCHEMA'
 			);
 		}
-
-		if (Object.keys(options.outputSchema).length > 50) {
-			throw new ParseratorError(
-				'outputSchema exceeds maximum of 50 fields',
-				'SCHEMA_TOO_LARGE'
-			);
-		}
-
-		if (options.instructions && typeof options.instructions !== 'string') {
-			throw new ParseratorError(
-				'instructions must be a string if provided',
-				'INVALID_INSTRUCTIONS'
-			);
-		}
+        // Other validations can remain here
 	}
 
-	isConfigured(): boolean {
-		return this.http !== null && this.config !== null;
-	}
+    isConfigured(): boolean {
+        return this.apiClient !== null;
+    }
 
-	getApiKeyPrefix(): string {
-		if (!this.config?.apiKey) return '';
-		return this.config.apiKey.substring(0, 12) + '...';
-	}
+    getApiKeyPrefix(): string {
+        const vscodeConfig = vscode.workspace.getConfiguration('parserator');
+        const apiKey = vscodeConfig.get('apiKey') as string | undefined;
+        if (!apiKey) { return ''; }
+        return apiKey.substring(0, Math.min(apiKey.length, 12)) + '...';
+    }
 }

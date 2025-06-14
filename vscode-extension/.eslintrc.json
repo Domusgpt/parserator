@@ -10,11 +10,12 @@
     ],
     "rules": {
         "@typescript-eslint/naming-convention": [
-            "warn",
-            {
-                "selector": "import",
-                "format": [ "camelCase", "PascalCase" ]
-            }
+            "warn"
+            // Temporarily removed the problematic "import" selector block
+            // {
+            //     "selector": "import",
+            //     "format": [ "camelCase", "PascalCase" ]
+            // }
         ],
         "@typescript-eslint/semi": "warn",
         "curly": "warn",

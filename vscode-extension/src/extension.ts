@@ -111,7 +111,7 @@ function registerCommands(context: vscode.ExtensionContext) {
 				placeHolder: 'e.g., Email Parser'
 			});
 
-			if (!name) return;
+			if (!name) { return; }
 
 			const description = await vscode.window.showInputBox({
 				prompt: 'Enter schema description (optional)',
@@ -159,7 +159,7 @@ function registerCommands(context: vscode.ExtensionContext) {
 	const editSchemaCommand = vscode.commands.registerCommand(
 		'parserator.editSchema',
 		async (schemaItem) => {
-			if (!schemaItem || !schemaItem.id) return;
+			if (!schemaItem || !schemaItem.id) { return; }
 
 			const schema = await schemaManager.getSchema(schemaItem.id);
 			if (!schema) {
@@ -197,10 +197,10 @@ function registerCommands(context: vscode.ExtensionContext) {
 	const deleteSchemaCommand = vscode.commands.registerCommand(
 		'parserator.deleteSchema',
 		async (schemaItem) => {
-			if (!schemaItem || !schemaItem.id) return;
+			if (!schemaItem || !schemaItem.id) { return; }
 
 			const schema = await schemaManager.getSchema(schemaItem.id);
-			if (!schema) return;
+			if (!schema) { return; }
 
 			const result = await vscode.window.showWarningMessage(
 				`Are you sure you want to delete the schema "${schema.name}"?`,
@@ -220,7 +220,7 @@ function registerCommands(context: vscode.ExtensionContext) {
 	const useSchemaCommand = vscode.commands.registerCommand(
 		'parserator.useSchema',
 		async (schemaItem) => {
-			if (!schemaItem || !schemaItem.id) return;
+			if (!schemaItem || !schemaItem.id) { return; }
 
 			const schema = await schemaManager.getSchema(schemaItem.id);
 			if (!schema) {
@@ -320,9 +320,10 @@ async function parseTextWithSchema(text: string, schema: any) {
 			progress.report({ increment: 0, message: 'Sending request...' });
 
 			const result = await parseratorService.parse({
-				inputData: text,
-				outputSchema: schema.schema,
-				instructions: schema.instructions
+				text: text, // Changed from inputData
+				schema: schema.schema, // Changed from outputSchema
+				// instructions: schema.instructions, // Removed: Not a standard field in CoreParseRequest.
+				                                    // If needed, embed in schema.schema or use model options.
 			});
 
 			progress.report({ increment: 50, message: 'Processing response...' });
