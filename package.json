@@ -28,13 +28,13 @@
     "demo": "node examples/basic-demo.js"
   },
   "devDependencies": {
-    "turbo": "^1.10.16",
     "@types/node": "^20.8.10",
-    "typescript": "^5.2.2",
-    "prettier": "^3.0.3",
-    "eslint": "^8.52.0",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
     "@typescript-eslint/parser": "^6.9.0",
-    "@typescript-eslint/eslint-plugin": "^6.9.0"
+    "eslint": "^8.52.0",
+    "prettier": "^3.0.3",
+    "turbo": "^1.10.16",
+    "typescript": "^5.2.2"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -71,5 +71,8 @@
     "no-vendor-lock-in",
     "open-standards"
   ],
-  "packageManager": "npm@9.8.1"
+  "packageManager": "npm@9.8.1",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
 }

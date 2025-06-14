@@ -1,0 +1,121 @@
+{
+  "name": "parserator-mcp-server",
+  "version": "1.0.1",
+  "description": "Model Context Protocol server for Parserator - EMA-compliant structured data parsing for AI agents",
+  "main": "dist/index.js",
+  "bin": {
+    "parserator-mcp-server": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x dist/cli.js",
+    "dev": "tsx src/index.ts",
+    "test": "jest",
+    "test:ema": "npm run test:ema:sovereignty && npm run test:ema:portability && npm run test:ema:standards && npm run test:ema:competition",
+    "test:ema:sovereignty": "jest --testPathPattern=ema/sovereignty",
+    "test:ema:portability": "jest --testPathPattern=ema/portability", 
+    "test:ema:standards": "jest --testPathPattern=ema/standards",
+    "test:ema:competition": "jest --testPathPattern=ema/competition",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src/**/*.ts",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "parserator",
+    "ai-agents",
+    "structured-data",
+    "ema-compliant",
+    "data-parsing",
+    "agent-tools",
+    "adk",
+    "langchain",
+    "crewai",
+    "autogpt",
+    "digital-sovereignty",
+    "data-portability",
+    "vendor-agnostic"
+  ],
+  "author": {
+    "name": "GEN-RL-MiLLz",
+    "email": "phillips.paul.email@gmail.com",
+    "url": "https://github.com/domusgpt"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Domusgpt/parserator.git",
+    "directory": "packages/mcp-server"
+  },
+  "homepage": "https://parserator.com",
+  "bugs": {
+    "url": "https://github.com/Domusgpt/parserator/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE",
+    "parserator-logo.png",
+    "ema-compliance.json"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "axios": "^1.6.0",
+    "commander": "^11.0.0",
+    "dotenv": "^16.3.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.1.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.2.0"
+  },
+  "ema": {
+    "compliance": {
+      "digitalSovereignty": {
+        "userDataOwnership": true,
+        "exportCapability": "complete",
+        "apiAccess": "unrestricted",
+        "dataRetention": "user-controlled"
+      },
+      "portabilityFirst": {
+        "migrationTools": "automated",
+        "standardFormats": "universal",
+        "documentation": "complete",
+        "exportFormats": ["json", "csv", "yaml", "xml"]
+      },
+      "standardsAgnosticism": {
+        "apiSpecification": "openapi",
+        "dataFormats": "standard",
+        "integration": "universal",
+        "protocols": ["http", "websocket", "mcp"]
+      },
+      "transparentCompetition": {
+        "wallOfOpenness": "public",
+        "migrationSupport": "active",
+        "comparisonMatrix": "honest",
+        "competitorIntegration": "supported"
+      }
+    },
+    "certification": {
+      "level": "pioneer",
+      "verified": true,
+      "lastAudit": "2025-06-07",
+      "nextReview": "2025-03-11"
+    }
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/domusgpt"
+  }
+}
