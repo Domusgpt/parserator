@@ -33,19 +33,27 @@ Socials, github, blog are also launching soon but this is for marketing agent fo
 - **Python SDK**: v1.1.0-alpha with wheel + tar.gz - Upload to PyPI
 - **Dashboard**: Static React build - Deploy to any hosting platform
 
-## 🎯 EXODITICAL MORAL ARCHITECTURE (EMA)
+## 📄 LICENSING STATUS: PROPRIETARY (IN TRANSITION)
 
-### The Four Pillars (Implemented)
-1. **Digital Sovereignty**: User data belongs to users, not platforms
-2. **Portability First**: Export/migration as first-class features
-3. **Standards Agnostic**: Universal formats (JSON, OpenAPI, Docker)
-4. **Transparent Competition**: Compete on merit, not captivity
+### Current License Model
+- **All Packages**: Currently PROPRIETARY license
+- **Integration Friendly**: Allows use for integration and development
+- **Commercial Rights Reserved**: Distribution/commercial use requires permission
+- **Future Strategy**: Evaluating optimal licensing approach for market position
 
-### EMA Compliance Features
-- **Complete Data Export**: All user data exportable in standard formats
-- **No Vendor Lock-in**: Works with any agent framework or hosting
-- **Open Standards**: REST API, OpenAPI spec, standard schemas
-- **Migration Tools**: Automated export and import capabilities
+### EMA Philosophy vs Open Source
+**EMA (Exoditical Moral Architecture)** is NOT the same as open source:
+- **EMA Focus**: User sovereignty, data portability, no vendor lock-in
+- **Business Model**: Sustainable while respecting user freedom  
+- **IP Strategy**: Maintaining ownership while enabling integration
+- **Future Consideration**: May transition to open source once market position established
+
+### Current Package Licensing
+- **Python SDK**: Proprietary with integration permissions
+- **Node SDK**: PROPRIETARY
+- **MCP Server**: PROPRIETARY  
+- **VS Code Extension**: PROPRIETARY
+- **Chrome Extension**: PROPRIETARY
 
 ## 🤖 AGENT FRAMEWORK INTEGRATION
 
@@ -147,7 +155,8 @@ ls -la vscode-extension/*.vsix
 ### Context Keywords for Claude
 - "**Production ready**" - All systems operational, focus on publishing
 - "**Manual submissions**" - Chrome/VS Code need developer portal uploads
-- "**EMA compliant**" - Follow Exoditical Moral Architecture principles
+- "**EMA compliant**" - Follow Exoditical Moral Architecture principles (NOT open source)
+- "**PROPRIETARY licensing**" - All packages use proprietary license, evaluating future strategy
 - "**No rebuilding**" - Everything is built, just publish existing packages
 
 ## 🏆 SUCCESS DEFINITION
