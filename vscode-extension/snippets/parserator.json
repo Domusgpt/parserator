@@ -1,0 +1,192 @@
+{
+	"Parserator Schema Template": {
+		"prefix": "parserator-schema",
+		"body": [
+			"{",
+			"  \"name\": \"${1:Schema Name}\",",
+			"  \"description\": \"${2:Schema Description}\",",
+			"  \"schema\": {",
+			"    \"${3:field_name}\": \"${4|string,number,boolean,email,phone,date,datetime,currency,url,string_array|}\"$0",
+			"  },",
+			"  \"instructions\": \"${5:Optional parsing instructions}\"",
+			"}"
+		],
+		"description": "Create a new Parserator schema template"
+	},
+	"Email Parser Schema": {
+		"prefix": "parserator-email",
+		"body": [
+			"{",
+			"  \"name\": \"Email Contact Extractor\",",
+			"  \"description\": \"Extract contact information from emails\",",
+			"  \"schema\": {",
+			"    \"sender_name\": \"string\",",
+			"    \"sender_email\": \"email\",",
+			"    \"sender_company\": \"string\",",
+			"    \"phone_numbers\": \"string_array\",",
+			"    \"meeting_time\": \"datetime\",",
+			"    \"action_items\": \"string_array\",",
+			"    \"attachments\": \"string_array\"$0",
+			"  }",
+			"}"
+		],
+		"description": "Email contact extraction schema"
+	},
+	"Invoice Parser Schema": {
+		"prefix": "parserator-invoice",
+		"body": [
+			"{",
+			"  \"name\": \"Invoice Data Extractor\",",
+			"  \"description\": \"Extract structured data from invoices\",",
+			"  \"schema\": {",
+			"    \"invoice_number\": \"string\",",
+			"    \"invoice_date\": \"date\",",
+			"    \"due_date\": \"date\",",
+			"    \"vendor_name\": \"string\",",
+			"    \"vendor_address\": \"string\",",
+			"    \"customer_name\": \"string\",",
+			"    \"customer_address\": \"string\",",
+			"    \"subtotal\": \"currency\",",
+			"    \"tax_amount\": \"currency\",",
+			"    \"total_amount\": \"currency\",",
+			"    \"payment_terms\": \"string\"$0",
+			"  }",
+			"}"
+		],
+		"description": "Invoice data extraction schema"
+	},
+	"Resume Parser Schema": {
+		"prefix": "parserator-resume",
+		"body": [
+			"{",
+			"  \"name\": \"Resume Parser\",",
+			"  \"description\": \"Extract structured data from resumes\",",
+			"  \"schema\": {",
+			"    \"full_name\": \"string\",",
+			"    \"email\": \"email\",",
+			"    \"phone\": \"phone\",",
+			"    \"current_position\": \"string\",",
+			"    \"company\": \"string\",",
+			"    \"skills\": \"string_array\",",
+			"    \"education\": \"string_array\",",
+			"    \"experience_years\": \"number\"$0",
+			"  }",
+			"}"
+		],
+		"description": "Resume data extraction schema"
+	},
+	"Meeting Notes Parser": {
+		"prefix": "parserator-meeting",
+		"body": [
+			"{",
+			"  \"name\": \"Meeting Notes Parser\",",
+			"  \"description\": \"Extract key information from meeting notes\",",
+			"  \"schema\": {",
+			"    \"meeting_date\": \"date\",",
+			"    \"attendees\": \"string_array\",",
+			"    \"agenda_items\": \"string_array\",",
+			"    \"decisions_made\": \"string_array\",",
+			"    \"action_items\": \"string_array\",",
+			"    \"next_meeting\": \"datetime\"$0",
+			"  }",
+			"}"
+		],
+		"description": "Meeting notes extraction schema"
+	},
+	"Product Review Schema": {
+		"prefix": "parserator-review",
+		"body": [
+			"{",
+			"  \"name\": \"Product Review Analyzer\",",
+			"  \"description\": \"Extract insights from product reviews\",",
+			"  \"schema\": {",
+			"    \"product_name\": \"string\",",
+			"    \"rating\": \"number\",",
+			"    \"reviewer_name\": \"string\",",
+			"    \"review_date\": \"date\",",
+			"    \"pros\": \"string_array\",",
+			"    \"cons\": \"string_array\",",
+			"    \"sentiment\": \"string\",",
+			"    \"would_recommend\": \"boolean\"$0",
+			"  }",
+			"}"
+		],
+		"description": "Product review analysis schema"
+	},
+	"Contact Information Schema": {
+		"prefix": "parserator-contact",
+		"body": [
+			"{",
+			"  \"name\": \"Contact Information Extractor\",",
+			"  \"description\": \"Extract contact details from text\",",
+			"  \"schema\": {",
+			"    \"full_name\": \"string\",",
+			"    \"email\": \"email\",",
+			"    \"phone\": \"phone\",",
+			"    \"company\": \"string\",",
+			"    \"job_title\": \"string\",",
+			"    \"website\": \"url\",",
+			"    \"address\": \"string\"$0",
+			"  }",
+			"}"
+		],
+		"description": "Contact information extraction schema"
+	},
+	"Event Information Schema": {
+		"prefix": "parserator-event",
+		"body": [
+			"{",
+			"  \"name\": \"Event Information Extractor\",",
+			"  \"description\": \"Extract event details from text\",",
+			"  \"schema\": {",
+			"    \"event_name\": \"string\",",
+			"    \"event_date\": \"date\",",
+			"    \"start_time\": \"datetime\",",
+			"    \"end_time\": \"datetime\",",
+			"    \"location\": \"string\",",
+			"    \"organizer\": \"string\",",
+			"    \"attendees\": \"string_array\",",
+			"    \"cost\": \"currency\"$0",
+			"  }",
+			"}"
+		],
+		"description": "Event information extraction schema"
+	},
+	"Financial Data Schema": {
+		"prefix": "parserator-financial",
+		"body": [
+			"{",
+			"  \"name\": \"Financial Data Extractor\",",
+			"  \"description\": \"Extract financial information from documents\",",
+			"  \"schema\": {",
+			"    \"transaction_date\": \"date\",",
+			"    \"amount\": \"currency\",",
+			"    \"description\": \"string\",",
+			"    \"category\": \"string\",",
+			"    \"account_number\": \"string\",",
+			"    \"merchant\": \"string\",",
+			"    \"transaction_type\": \"string\"$0",
+			"  }",
+			"}"
+		],
+		"description": "Financial data extraction schema"
+	},
+	"Parserator Field Types": {
+		"prefix": "parserator-types",
+		"body": [
+			"// Parserator supported field types:",
+			"// \"string\"       - Text data",
+			"// \"number\"       - Numeric values",
+			"// \"boolean\"      - True/false values",
+			"// \"email\"        - Email addresses",
+			"// \"phone\"        - Phone numbers",
+			"// \"date\"         - Date values (YYYY-MM-DD)",
+			"// \"datetime\"     - Date with time",
+			"// \"currency\"     - Monetary amounts",
+			"// \"url\"          - Web addresses",
+			"// \"string_array\" - Array of strings",
+			"$0"
+		],
+		"description": "Reference for Parserator field types"
+	}
+}

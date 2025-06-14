@@ -1,0 +1,197 @@
+name: Build and Release Parserator Extensions
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build'
+        required: true
+        default: 'latest'
+
+jobs:
+  build-python-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install build dependencies
+        run: |
+          cd python-sdk
+          pip install build twine
+          
+      - name: Build Python package
+        run: |
+          cd python-sdk
+          python -m build
+          
+      - name: Upload Python artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-sdk-dist
+          path: python-sdk/dist/
+
+  build-chrome-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Build Chrome extension
+        run: |
+          cd chrome-extension
+          npm ci
+          npm run package
+          
+      - name: Upload Chrome extension artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: chrome-extension
+          path: chrome-extension/*.zip
+
+  build-vscode-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install vsce
+        run: npm install -g vsce
+        
+      - name: Build VS Code extension
+        run: |
+          cd vscode-extension
+          npm ci
+          npm run compile
+          npm run package
+          
+      - name: Upload VS Code extension artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: vscode-extension
+          path: vscode-extension/*.vsix
+
+  build-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Build dashboard
+        run: |
+          cd dashboard
+          npm ci
+          npm run build
+          
+      - name: Upload dashboard artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dashboard-build
+          path: dashboard/out/
+
+  build-jetbrains-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        
+      - name: Build JetBrains plugin
+        run: |
+          cd jetbrains-plugin
+          ./gradlew buildPlugin
+          
+      - name: Upload JetBrains plugin artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: jetbrains-plugin
+          path: jetbrains-plugin/build/distributions/*.zip
+
+  create-release:
+    needs: [build-python-sdk, build-chrome-extension, build-vscode-extension, build-dashboard, build-jetbrains-plugin]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            python-sdk-dist/*
+            chrome-extension/*
+            vscode-extension/*
+            jetbrains-plugin/*
+          body: |
+            ## Parserator Release ${{ github.ref_name }}
+            
+            This release includes:
+            - Python SDK for PyPI
+            - Chrome Extension for Chrome Web Store
+            - VS Code Extension for VS Code Marketplace
+            - JetBrains Plugin for JetBrains Marketplace
+            - Dashboard static files for deployment
+            
+            ### Installation:
+            - **Python**: `pip install parserator-sdk`
+            - **Chrome**: Install from Chrome Web Store
+            - **VS Code**: Install from VS Code Marketplace
+            - **JetBrains**: Install from JetBrains Marketplace
+            
+            ### API Status:
+            - Production API: https://app-5108296280.us-central1.run.app/v1/parse
+            - Documentation: https://parserator.com/docs
+            - EMA Compliant: User data sovereignty guaranteed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Optional: Auto-deploy dashboard to Firebase/Netlify
+  deploy-dashboard:
+    needs: build-dashboard
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Download dashboard artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dashboard-build
+          path: dashboard/out/
+          
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          projectId: parserator-production
+          channelId: live

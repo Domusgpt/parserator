@@ -1,0 +1,246 @@
+{
+  "name": "parserator",
+  "displayName": "Parserator",
+  "description": "Transform unstructured text into structured JSON using AI-powered parsing",
+  "version": "1.0.0",
+  "publisher": "domusgpt",
+  "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Data Science",
+    "Machine Learning",
+    "Formatters",
+    "Other"
+  ],
+  "keywords": [
+    "parsing",
+    "ai",
+    "json",
+    "data extraction",
+    "llm",
+    "parserator"
+  ],
+  "activationEvents": [
+    "onCommand:parserator.parseSelection",
+    "onCommand:parserator.openSchemaPanel",
+    "onCommand:parserator.testConnection",
+    "onView:parseratorSchemas"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "parserator.parseSelection",
+        "title": "Parse Selection",
+        "category": "Parserator",
+        "icon": "$(symbol-misc)"
+      },
+      {
+        "command": "parserator.openSchemaPanel",
+        "title": "Open Schema Panel",
+        "category": "Parserator",
+        "icon": "$(json)"
+      },
+      {
+        "command": "parserator.testConnection",
+        "title": "Test API Connection",
+        "category": "Parserator",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "parserator.refreshSchemas",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "parserator.addSchema",
+        "title": "Add Schema",
+        "icon": "$(add)"
+      },
+      {
+        "command": "parserator.editSchema",
+        "title": "Edit Schema",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "parserator.deleteSchema",
+        "title": "Delete Schema",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "parserator.useSchema",
+        "title": "Use This Schema",
+        "icon": "$(play)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "parserator.parseSelection",
+          "when": "editorHasSelection",
+          "group": "parserator"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "parserator.parseSelection",
+          "when": "editorHasSelection",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "parserator.refreshSchemas",
+          "when": "view == parseratorSchemas",
+          "group": "navigation"
+        },
+        {
+          "command": "parserator.addSchema",
+          "when": "view == parseratorSchemas",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "parserator.useSchema",
+          "when": "view == parseratorSchemas && viewItem == schema",
+          "group": "inline"
+        },
+        {
+          "command": "parserator.editSchema",
+          "when": "view == parseratorSchemas && viewItem == schema",
+          "group": "inline"
+        },
+        {
+          "command": "parserator.deleteSchema",
+          "when": "view == parseratorSchemas && viewItem == schema",
+          "group": "inline"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "parseratorSchemas",
+          "name": "Parserator Schemas",
+          "when": "parserator.enabled"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "parseratorSchemas",
+        "contents": "No schemas configured yet.\n[Add Schema](command:parserator.addSchema)\nTo get started, you need to configure your Parserator API key in settings."
+      }
+    ],
+    "configuration": {
+      "title": "Parserator",
+      "properties": {
+        "parserator.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Parserator API key (pk_live_xxx or pk_test_xxx)",
+          "pattern": "^pk_(live|test)_[a-zA-Z0-9]{20,}$"
+        },
+        "parserator.baseUrl": {
+          "type": "string",
+          "default": "https://app-5108296280.us-central1.run.app",
+          "description": "Parserator API base URL"
+        },
+        "parserator.timeout": {
+          "type": "number",
+          "default": 30000,
+          "description": "Request timeout in milliseconds"
+        },
+        "parserator.autoOpenResults": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open parsing results in a new editor tab"
+        },
+        "parserator.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show success/error notifications"
+        },
+        "parserator.defaultSchema": {
+          "type": "object",
+          "default": {
+            "field1": "string",
+            "field2": "number"
+          },
+          "description": "Default schema for quick parsing"
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "json",
+        "path": "./snippets/parserator.json"
+      },
+      {
+        "language": "jsonc",
+        "path": "./snippets/parserator.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "parserator-schema",
+        "scopeName": "source.parserator-schema",
+        "path": "./syntaxes/parserator-schema.tmGrammar.json"
+      }
+    ],
+    "languages": [
+      {
+        "id": "parserator-schema",
+        "aliases": [
+          "Parserator Schema",
+          "parserator-schema"
+        ],
+        "extensions": [
+          ".parserator",
+          ".pschema"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package --out parserator-$(node -p 'require(\"./package.json\").version').vsix",
+    "deploy": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^8.28.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.8.2",
+    "typescript": "^4.9.0",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/domusgpt/parserator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/domusgpt/parserator/issues",
+    "email": "Gen-rl-millz@parserator.com"
+  },
+  "homepage": "https://parserator.com"
+}

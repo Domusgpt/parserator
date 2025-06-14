@@ -1,0 +1,77 @@
+# Build outputs and distribution files
+*.zip
+*.vsix
+*.tar.gz
+*.whl
+dist/
+build/
+out/
+
+# Dashboard build output
+dashboard/out/
+dashboard/.next/
+dashboard/dist/
+
+# Extension build artifacts
+chrome-extension/parserator-chrome-extension-*.zip
+vscode-extension/parserator-*.vsix
+
+# Python build artifacts
+python-sdk/dist/
+python-sdk/build/
+python-sdk/*.egg-info/
+python-sdk/.eggs/
+
+# JetBrains plugin build
+jetbrains-plugin/build/
+jetbrains-plugin/out/
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+*.log
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+.coverage
+.pytest_cache/
+.tox/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+
+# Compiled TypeScript
+lib/
+*.d.ts.map
+*.js.map
