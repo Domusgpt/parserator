@@ -19,10 +19,12 @@ This directory contains the complete, production-ready Parserator platform - the
 - **Dashboard**: `/dashboard/out/` - Deploy static files to any hosting platform
 - **JetBrains Plugin**: `/jetbrains-plugin/` - Complete source, needs build environment
 
-### 📚 Documentation & Examples
-- **API Examples**: Working integration code for Google ADK, LangChain, MCP
-- **Testing Scripts**: Validated performance and accuracy metrics
-- **Documentation**: Complete setup and usage guides
+### 📚 Documentation
+- **[Architecture Guide](docs/Architecture.md)**: Architect-Extractor pattern and system design
+- **[Usage Guide](docs/Usage.md)**: Quick start, SDK integration, and examples  
+- **[Testing Guide](docs/Testing.md)**: How to run tests and interpret results
+- **[Component Status](COMPONENT_STATUS.md)**: Detailed status of all components
+- **[EMA Manifesto](EMA_MANIFESTO.md)**: Exoditical Moral Architecture principles
 
 ## File Structure
 ```
@@ -57,11 +59,15 @@ parserator-launch-ready/
 - **$0.000075** per request cost
 - **100% success rate** in production testing
 
-## EMA Compliant
+## EMA Compliant (Proprietary License)
 Built on Exoditical Moral Architecture principles:
 - ✅ User data sovereignty
-- ✅ No vendor lock-in
+- ✅ No vendor lock-in  
 - ✅ Complete data portability
 - ✅ Transparent competition
+
+**EMA ≠ Open Source**: EMA focuses on user empowerment and fair competition while maintaining IP ownership and sustainable business models.
+
+**License**: Proprietary - Integration friendly with commercial rights reserved. See [LICENSE](LICENSE) for details.
 
 **Ready to launch the future of agent-compatible data parsing.**
