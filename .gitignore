@@ -74,4 +74,5 @@ ui-debug.log
 # Compiled TypeScript
 lib/
 *.d.ts.map
-*.js.map
+*.js.mapworktrees/
+python-sdk/upload_env/
