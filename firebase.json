@@ -58,5 +58,8 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "extensions": {
+    "stripe-payments": "stripe/firestore-stripe-payments@0.3.4"
   }
 }
