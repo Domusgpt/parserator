@@ -1,84 +1,146 @@
 /**
- * Parserator Production API - Simplified SaaS Version
- * Step-by-step deployment to avoid timeouts
+ * Parserator Production API with Gemini Structured Outputs
+ * Fixed version that eliminates JSON parsing errors
  */
 
 import * as functions from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
+
+// Initialize Firebase Admin
+admin.initializeApp();
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 
-// Simple in-memory API key store for testing (will replace with Firestore)
-const DEMO_API_KEYS = new Map([
-  ['pk_test_demo_key_12345', { userId: 'demo-user-1', tier: 'free', active: true }],
-  ['pk_live_production_key_67890', { userId: 'demo-user-2', tier: 'pro', active: true }],
-  ['pk_test_enterprise_key_99999', { userId: 'demo-user-3', tier: 'enterprise', active: true }]
-]);
+// Firestore instance
+const db = admin.firestore();
 
-// Usage tracking (in-memory for now, will replace with Firestore)
-const USAGE_TRACKING = new Map();
-
-// Subscription limits
+// Subscription tiers and limits
 const SUBSCRIPTION_LIMITS = {
-  anonymous: { dailyRequests: 10, rateLimitRpm: 5 },
-  free: { dailyRequests: 50, rateLimitRpm: 10 },
-  pro: { dailyRequests: 1000, rateLimitRpm: 100 },
-  enterprise: { dailyRequests: -1, rateLimitRpm: 1000 }
+  anonymous: { 
+    dailyRequests: 10, 
+    monthlyRequests: 50,
+    tokensPerMonth: 5000,
+    rateLimitRpm: 5
+  },
+  free: { 
+    dailyRequests: 50, 
+    monthlyRequests: 1000,
+    tokensPerMonth: 10000,
+    rateLimitRpm: 10
+  },
+  pro: { 
+    dailyRequests: 1000, 
+    monthlyRequests: 20000,
+    tokensPerMonth: 500000,
+    rateLimitRpm: 100
+  },
+  enterprise: { 
+    dailyRequests: -1, 
+    monthlyRequests: -1,
+    tokensPerMonth: -1,
+    rateLimitRpm: 1000
+  }
 };
 
-// Simple API key validation
-function validateApiKey(apiKey: string): {valid: boolean, userId?: string, tier?: string} {
-  const keyData = DEMO_API_KEYS.get(apiKey);
-  if (!keyData || !keyData.active) {
+// API Key validation and user lookup
+async function validateApiKey(apiKey: string): Promise<{valid: boolean, userId?: string, tier?: string}> {
+  try {
+    const apiKeyDoc = await db.collection('api_keys').doc(apiKey).get();
+    
+    if (!apiKeyDoc.exists) {
+      return { valid: false };
+    }
+    
+    const keyData = apiKeyDoc.data();
+    if (!keyData || keyData.active !== true) {
+      return { valid: false };
+    }
+    
+    // Get user's subscription info
+    const userDoc = await db.collection('users').doc(keyData.userId).get();
+    const userData = userDoc.data();
+    const tier = userData?.subscription?.tier || 'free';
+    
+    return { 
+      valid: true, 
+      userId: keyData.userId,
+      tier: tier
+    };
+  } catch (error) {
+    console.error('API key validation error:', error);
     return { valid: false };
   }
-  return { 
-    valid: true, 
-    userId: keyData.userId,
-    tier: keyData.tier
-  };
 }
 
-// Simple usage tracking
-function trackUsage(userId: string | null, tokensUsed: number, requestId: string): void {
-  if (!userId) return;
+// Usage tracking
+async function trackUsage(userId: string | null, tokensUsed: number, requestId: string): Promise<void> {
+  if (!userId) return; // Don't track anonymous users in DB
   
   const today = new Date().toISOString().split('T')[0];
-  const key = `${userId}:${today}`;
+  const month = today.substring(0, 7); // YYYY-MM
   
-  const existing = USAGE_TRACKING.get(key) || { requests: 0, tokens: 0 };
-  existing.requests += 1;
-  existing.tokens += tokensUsed;
-  existing.lastRequest = new Date();
-  existing.lastRequestId = requestId;
-  
-  USAGE_TRACKING.set(key, existing);
-  
-  console.log(`📊 Usage tracked: ${userId} - ${existing.requests} requests, ${existing.tokens} tokens today`);
+  try {
+    // Track daily usage
+    await db.collection('usage').doc(userId).collection('daily').doc(today).set({
+      requests: FieldValue.increment(1),
+      tokens: FieldValue.increment(tokensUsed),
+      lastRequest: new Date(),
+      lastRequestId: requestId
+    }, { merge: true });
+    
+    // Track monthly usage
+    await db.collection('usage').doc(userId).set({
+      [`monthly.${month}.requests`]: FieldValue.increment(1),
+      [`monthly.${month}.tokens`]: FieldValue.increment(tokensUsed),
+      totalRequests: FieldValue.increment(1),
+      totalTokens: FieldValue.increment(tokensUsed),
+      lastRequest: new Date(),
+      lastRequestId: requestId
+    }, { merge: true });
+    
+  } catch (error) {
+    console.error('Usage tracking error:', error);
+  }
 }
 
-// Simple usage limit checking
-function checkUsageLimits(userId: string | null, tier: string): {allowed: boolean, reason?: string} {
-  if (!userId) return { allowed: true }; // Anonymous users get basic access
+// Check usage limits
+async function checkUsageLimits(userId: string | null, tier: string): Promise<{allowed: boolean, reason?: string}> {
+  if (!userId) {
+    // For anonymous users, implement simple rate limiting (could use Redis in production)
+    return { allowed: true }; // Simplified for now
+  }
   
   const limits = SUBSCRIPTION_LIMITS[tier as keyof typeof SUBSCRIPTION_LIMITS];
-  if (!limits || limits.dailyRequests === -1) {
+  if (!limits) {
+    return { allowed: false, reason: 'Invalid subscription tier' };
+  }
+  
+  if (limits.dailyRequests === -1) {
     return { allowed: true }; // Unlimited
   }
   
-  const today = new Date().toISOString().split('T')[0];
-  const key = `${userId}:${today}`;
-  const usage = USAGE_TRACKING.get(key);
-  
-  if (usage && usage.requests >= limits.dailyRequests) {
-    return { 
-      allowed: false, 
-      reason: `Daily limit of ${limits.dailyRequests} requests exceeded` 
-    };
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const dailyUsageDoc = await db.collection('usage').doc(userId).collection('daily').doc(today).get();
+    
+    if (dailyUsageDoc.exists) {
+      const usage = dailyUsageDoc.data();
+      if (usage && usage.requests >= limits.dailyRequests) {
+        return { 
+          allowed: false, 
+          reason: `Daily limit of ${limits.dailyRequests} requests exceeded` 
+        };
+      }
+    }
+    
+    return { allowed: true };
+  } catch (error) {
+    console.error('Usage limit check error:', error);
+    return { allowed: true }; // Allow on error to prevent blocking
   }
-  
-  return { allowed: true };
 }
 
 // Define structured output schemas for Gemini
@@ -190,8 +252,8 @@ export const app = functions.onRequest({
         return;
       }
       
-      // Validate API key in memory store (will replace with Firestore)
-      const keyValidation = validateApiKey(apiKey);
+      // Validate API key in database
+      const keyValidation = await validateApiKey(apiKey);
       if (!keyValidation.valid) {
         res.status(401).json({
           error: 'Invalid API key',
@@ -210,7 +272,7 @@ export const app = functions.onRequest({
     }
     
     // Check usage limits before processing
-    const usageCheck = checkUsageLimits(userId, userTier);
+    const usageCheck = await checkUsageLimits(userId, userTier);
     if (!usageCheck.allowed) {
       res.status(429).json({
         error: 'Usage limit exceeded',
@@ -232,12 +294,7 @@ export const app = functions.onRequest({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       version: '1.0.0',
-      message: 'Parserator API is live with SaaS features!',
-      saas: {
-        apiKeyValidation: 'Working',
-        usageTracking: 'Working (in-memory)',
-        rateLimiting: 'Working'
-      }
+      message: 'Parserator API is live with structured outputs!'
     });
     return;
   }
@@ -248,34 +305,12 @@ export const app = functions.onRequest({
       name: 'Parserator API',
       version: '1.0.0',
       status: 'running',
-      features: ['structured-outputs', 'architect-extractor', 'api-key-auth', 'usage-tracking'],
+      features: ['structured-outputs', 'architect-extractor', 'intelligent-error-recovery'],
       endpoints: {
         'GET /health': 'Health check',
         'GET /v1/info': 'API information',
-        'POST /v1/parse': 'Parse data with structured outputs',
-        'GET /v1/demo/usage': 'Demo usage statistics'
-      },
-      demoApiKeys: [
-        'pk_test_demo_key_12345 (free tier)',
-        'pk_live_production_key_67890 (pro tier)',
-        'pk_test_enterprise_key_99999 (enterprise tier)'
-      ]
-    });
-    return;
-  }
-
-  // Demo usage endpoint to show tracking is working
-  if (path === '/v1/demo/usage' && req.method === 'GET') {
-    const usage = Array.from(USAGE_TRACKING.entries()).map(([key, data]) => {
-      const [userId, date] = key.split(':');
-      return { userId, date, ...data };
-    });
-    
-    res.json({
-      success: true,
-      message: 'Demo usage tracking (in-memory)',
-      usage: usage,
-      totalTrackedRequests: usage.reduce((sum, u) => sum + u.requests, 0)
+        'POST /v1/parse': 'Parse data with structured outputs'
+      }
     });
     return;
   }
@@ -413,7 +448,7 @@ Execute the plan and return the extracted data.`;
 
       // Track usage for authenticated users
       if ((req as any).userId) {
-        trackUsage((req as any).userId, tokensUsed, requestId);
+        await trackUsage((req as any).userId, tokensUsed, requestId);
       }
 
       // Return successful response
@@ -428,7 +463,7 @@ Execute the plan and return the extracted data.`;
           requestId: requestId,
           timestamp: new Date().toISOString(),
           version: '1.0.0',
-          features: ['structured-outputs', 'api-key-auth', 'usage-tracking'],
+          features: ['structured-outputs'],
           userTier: (req as any).userTier || 'anonymous',
           billing: (req as any).userTier === 'anonymous' ? 'trial_usage' : 'api_key_usage',
           userId: (req as any).userId || null
@@ -455,6 +490,106 @@ Execute the plan and return the extracted data.`;
         }
       });
     }
+    return;
+  }
+
+  // User management endpoints
+  if (path === '/v1/user/keys' && req.method === 'POST') {
+    // Generate new API key for authenticated user
+    const authToken = req.headers.authorization?.replace('Bearer ', '');
+    if (!authToken) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(authToken);
+      const userId = decodedToken.uid;
+      
+      // Generate new API key
+      const keyPrefix = 'pk_test_';
+      const keyBody = Array.from({length: 32}, () => 
+        Math.random().toString(36).charAt(Math.floor(Math.random() * 36))
+      ).join('');
+      const apiKey = keyPrefix + keyBody;
+      
+      // Store in Firestore
+      await db.collection('api_keys').doc(apiKey).set({
+        userId: userId,
+        active: true,
+        created: new Date(),
+        name: req.body.name || 'Default API Key',
+        environment: 'test'
+      });
+      
+      res.json({
+        success: true,
+        apiKey: apiKey,
+        name: req.body.name || 'Default API Key',
+        created: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      res.status(401).json({ error: 'Invalid authentication token' });
+    }
+    return;
+  }
+
+  // Get user usage stats
+  if (path === '/v1/user/usage' && req.method === 'GET') {
+    const authToken = req.headers.authorization?.replace('Bearer ', '');
+    if (!authToken) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(authToken);
+      const userId = decodedToken.uid;
+      
+      const today = new Date().toISOString().split('T')[0];
+      const month = today.substring(0, 7);
+      
+      // Get usage data
+      const usageDoc = await db.collection('usage').doc(userId).get();
+      const dailyDoc = await db.collection('usage').doc(userId).collection('daily').doc(today).get();
+      
+      const usage = usageDoc.data() || {};
+      const dailyUsage = dailyDoc.data() || { requests: 0, tokens: 0 };
+      const monthlyUsage = usage.monthly?.[month] || { requests: 0, tokens: 0 };
+      
+      res.json({
+        success: true,
+        usage: {
+          today: dailyUsage,
+          thisMonth: monthlyUsage,
+          allTime: {
+            requests: usage.totalRequests || 0,
+            tokens: usage.totalTokens || 0
+          }
+        }
+      });
+      
+    } catch (error) {
+      res.status(401).json({ error: 'Invalid authentication token' });
+    }
+    return;
+  }
+
+  // Metrics endpoint
+  if (path === '/metrics' && req.method === 'GET') {
+    res.json({
+      status: 'metrics',
+      message: 'Check Firebase console logs for detailed metrics',
+      endpoints: {
+        health: '/health',
+        parse: '/v1/parse',
+        createApiKey: 'POST /v1/user/keys',
+        userUsage: 'GET /v1/user/usage',
+        metrics: '/metrics'
+      },
+      note: 'For detailed usage metrics, check Google Cloud Console Logs'
+    });
     return;
   }
 
