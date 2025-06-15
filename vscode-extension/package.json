@@ -214,8 +214,9 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package",
-    "deploy": "vsce publish"
+    "package": "mkdir -p release && vsce package --out release/ && echo 'Packaged to vscode-extension/release/'",
+    "deploy": "vsce publish",
+    "clean": "rm -rf out release *.vsix"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",

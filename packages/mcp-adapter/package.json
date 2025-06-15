@@ -12,12 +12,13 @@
     "test": "jest",
     "test:ema": "npm run test:ema:sovereignty && npm run test:ema:portability && npm run test:ema:standards && npm run test:ema:competition",
     "test:ema:sovereignty": "jest --testPathPattern=ema/sovereignty",
-    "test:ema:portability": "jest --testPathPattern=ema/portability", 
+    "test:ema:portability": "jest --testPathPattern=ema/portability",
     "test:ema:standards": "jest --testPathPattern=ema/standards",
     "test:ema:competition": "jest --testPathPattern=ema/competition",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src/**/*.ts",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "clean": "rm -rf dist"
   },
   "keywords": [
     "mcp",
@@ -92,13 +93,22 @@
         "migrationTools": "automated",
         "standardFormats": "universal",
         "documentation": "complete",
-        "exportFormats": ["json", "csv", "yaml", "xml"]
+        "exportFormats": [
+          "json",
+          "csv",
+          "yaml",
+          "xml"
+        ]
       },
       "standardsAgnosticism": {
         "apiSpecification": "openapi",
         "dataFormats": "standard",
         "integration": "universal",
-        "protocols": ["http", "websocket", "mcp"]
+        "protocols": [
+          "http",
+          "websocket",
+          "mcp"
+        ]
       },
       "transparentCompetition": {
         "wallOfOpenness": "public",

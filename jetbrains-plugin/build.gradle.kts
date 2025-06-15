@@ -49,6 +49,11 @@ tasks {
         kotlinOptions.jvmTarget = "17"
     }
 
+    // Configure output directory for the plugin archive
+    named<org.jetbrains.intellij.tasks.BuildPluginTask>("buildPlugin") {
+        destinationDirectory.set(file("$buildDir/release"))
+    }
+
     patchPluginXml {
         sinceBuild.set("232")
         untilBuild.set("241.*")
