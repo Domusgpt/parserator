@@ -1,7 +1,7 @@
 {
-  "name": "@parserator/core",
+  "name": "@parserator/types",
   "version": "1.0.0",
-  "description": "Core HTTP client for Parserator - Production-grade API client with 95% accuracy",
+  "description": "TypeScript definitions for Parserator API - Production-grade types for 95% accuracy parsing",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -12,19 +12,16 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "dev": "tsc --watch",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "prepublishOnly": "npm run clean && npm run build && npm test"
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
     "parserator",
+    "types",
+    "typescript",
     "api",
-    "client",
-    "http",
     "parsing",
     "ai",
-    "architect-extractor",
-    "typescript"
+    "architect-extractor"
   ],
   "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
   "license": "PROPRIETARY",
@@ -32,17 +29,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/domusgpt/parserator.git",
-    "directory": "packages/core"
-  },
-  "dependencies": {
-    "@parserator/types": "^1.0.0",
-    "axios": "^1.6.2"
+    "directory": "packages/types"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.8",
-    "@types/node": "^20.8.10",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.1",
     "typescript": "^5.2.2"
   },
   "engines": {
