@@ -159,6 +159,36 @@ pip install parserator[adk]
 
 ---
 
+## 🛠️ Development Environment Setup
+
+Setting up a consistent development environment is crucial for contributing to this project or building applications that rely on its tools. This project provides a helper script to automate the installation of key development tools.
+
+The `setup_dev_tools.sh` script, located in the root of this repository, will:
+- Install **Flutter SDK**: A specific, pinned version (currently `3.22.2`) to ensure consistency across development environments.
+- Install **Firebase CLI**: The latest stable version, as provided by its official installer.
+- Install **Google Cloud SDK (gcloud CLI)**: The latest stable version, as provided by its official package repository.
+
+**To run the setup script:**
+
+1.  Navigate to the root directory of this repository.
+2.  Make the script executable (if you haven't already):
+    ```bash
+    chmod +x setup_dev_tools.sh
+    ```
+3.  Execute the script:
+    ```bash
+    ./setup_dev_tools.sh
+    ```
+
+**After running the script:**
+
+- The tools will be installed to their default or specified locations (Flutter is installed under `$HOME/sdks/flutter`).
+- The script will add Flutter to your `PATH` for the current terminal session.
+- For persistent `PATH` changes, you may need to add the relevant binary directories to your shell's configuration file (e.g., `~/.bashrc`, `~/.zshrc`). The script provides guidance on this at the end of its execution.
+- It's often necessary to **open a new terminal session** or source your shell's rc file (e.g., `source ~/.bashrc`) for all `PATH` changes to take full effect and for the newly installed commands to be available globally.
+
+---
+
 ## 🌟 **Use Cases**
 
 ### **For Developers**
