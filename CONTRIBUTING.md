@@ -278,7 +278,7 @@ Your contributions make Parserator better for everyone. Whether you're fixing a 
 ---
 
 ### License
-By contributing, you agree that your contributions will be licensed under the same MIT License that covers the project.
+By contributing, you agree that your contributions will be subject to the same license terms as the project, as detailed in the [LICENSE](LICENSE) file.
 
 ### Questions?
 Feel free to reach out:

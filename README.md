@@ -3,7 +3,6 @@
 **The Structured Data Layer for AI Agents**
 
 [![npm version](https://img.shields.io/npm/v/parserator.svg)](https://www.npmjs.com/package/parserator)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![EMA Compliant](https://img.shields.io/badge/EMA-Compliant-green.svg)](#exoditical-moral-architecture)
 
 Transform any unstructured input into agent-ready JSON with 95% accuracy. Built for Google ADK, MCP, LangChain, and any agent framework using our revolutionary two-stage Architect-Extractor pattern.
