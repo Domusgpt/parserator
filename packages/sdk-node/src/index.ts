@@ -25,11 +25,8 @@ export interface NodeParseOptions {
  * Extends the shared core with file system operations and Node.js conveniences
  */
 export class Parserator extends ParseClient {
-  constructor(apiKey?: string, config?: Partial<ClientConfig>) {
-    super({
-      apiKey,
-      ...config
-    });
+  constructor(config: Partial<ClientConfig> & { apiKey?: string } = {}) {
+    super(config);
   }
 
   /**
