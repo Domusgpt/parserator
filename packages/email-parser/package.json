@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Email-to-schema parsing service - Send data via email, get structured JSON back",
   "main": "index.js",
+  "license": "PROPRIETARY",
   "scripts": {
     "deploy": "firebase deploy --only functions:emailToSchema",
     "test": "node test.js"

@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "publisher": "domusgpt",
   "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
-  "license": "MIT",
+  "license": "PROPRIETARY",
   "engines": {
     "vscode": "^1.74.0"
   },

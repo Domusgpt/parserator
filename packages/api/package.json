@@ -4,6 +4,7 @@
   "description": "Parserator SaaS API - Intelligent data parsing using Architect-Extractor pattern",
   "main": "lib/index.js",
   "private": true,
+  "license": "PROPRIETARY",
   "scripts": {
     "dev": "firebase emulators:start --only functions",
     "build": "tsc",
