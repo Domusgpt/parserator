@@ -6,9 +6,6 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
-import { defineSecret } from 'firebase-functions/params';
-
-const geminiApiKey = defineSecret('GEMINI_API_KEY');
 
 // Define structured output schemas for Gemini
 const architectSchema = {
@@ -93,8 +90,8 @@ export const parseHandler = async (req: AuthenticatedRequest, res: Response) => 
       });
     }
     
-    // Get Gemini API key
-    const apiKey = geminiApiKey.value();
+    // Get Gemini API key from environment
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({
         success: false,
