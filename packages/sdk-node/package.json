@@ -10,8 +10,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && npm run build:types",
-    "build:types": "tsc --emitDeclarationOnly",
+    "build": "tsc",
     "dev": "tsc --watch",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
@@ -55,10 +54,7 @@
     "url": "https://github.com/domusgpt/parserator/issues"
   },
   "dependencies": {
-    "@types/joi": "^17.2.2",
-    "axios": "^1.6.2",
-    "dotenv": "^16.3.1",
-    "joi": "^17.11.0"
+    "@parserator/core": "^1.0.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",

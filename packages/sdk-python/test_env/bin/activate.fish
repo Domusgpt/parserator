@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV '/mnt/c/Users/millz/the parserator complete/parserator-development-post-launch/active-development/packages/sdk-python/test_env'
+set -gx VIRTUAL_ENV /mnt/c/Users/millz/parserator-launch-ready/packages/sdk-python/test_env
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

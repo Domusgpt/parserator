@@ -4,7 +4,7 @@
   "private": false,
   "description": "The Structured Data Layer for AI Agents - Transform any unstructured input into agent-ready JSON with 95% accuracy",
   "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
-  "license": "MIT",
+  "license": "PROPRIETARY",
   "homepage": "https://parserator.com",
   "repository": {
     "type": "git",
@@ -15,7 +15,9 @@
     "email": "Gen-rl-millz@parserator.com"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "node-sdk",
+    "python-sdk"
   ],
   "scripts": {
     "dev": "turbo run dev",

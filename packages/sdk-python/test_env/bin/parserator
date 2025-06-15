@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/mnt/c/Users/millz/the parserator complete/parserator-development-post-launch/active-development/packages/sdk-python/test_env/bin/python3" "$0" "$@"
-' '''
+#!/mnt/c/Users/millz/parserator-launch-ready/packages/sdk-python/test_env/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

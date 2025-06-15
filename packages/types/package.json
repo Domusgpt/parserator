@@ -1,0 +1,43 @@
+{
+  "name": "@parserator/types",
+  "version": "1.0.0",
+  "description": "TypeScript definitions for Parserator API - Production-grade types for 95% accuracy parsing",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "parserator",
+    "types",
+    "typescript",
+    "api",
+    "parsing",
+    "ai",
+    "architect-extractor"
+  ],
+  "author": "Paul Phillips <Gen-rl-millz@parserator.com>",
+  "license": "PROPRIETARY",
+  "homepage": "https://parserator.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/domusgpt/parserator.git",
+    "directory": "packages/types"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
