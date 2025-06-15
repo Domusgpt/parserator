@@ -249,6 +249,42 @@ print(result.parsed_data)
 
 ---
 
+## 🏗️ **Shared Core Architecture**
+
+Parserator uses a **lean shared core** architecture for maximum efficiency and maintainability:
+
+### **Architecture Overview**
+```
+┌─────────────────────────────────────────┐
+│     SHARED CORE (@parserator/core)     │
+│   Types, Validation, HTTP Client       │ 
+└─────────────────────────────────────────┘
+              │
+     ┌────────┼────────┐
+     │        │        │
+┌────▼───┐ ┌──▼───┐ ┌──▼────────┐
+│Node SDK│ │Python│ │Extensions │
+│(50KB)  │ │ SDK  │ │ (Chrome,  │
+│        │ │(50KB)│ │   VSCode) │
+└────────┘ └──────┘ └───────────┘
+     │        │        │
+     └────────┼────────┘
+              │
+    ┌─────────▼─────────┐
+    │  PRODUCTION API   │
+    │ 95% Accuracy      │
+    │ Architect-Extract │
+    └───────────────────┘
+```
+
+### **Benefits**
+- **75% smaller** SDK bundles (250KB vs 1MB total)
+- **Single source of truth** for API logic
+- **Consistent experience** across all platforms
+- **Faster maintenance** and feature development
+
+See [SHARED_CORE_ARCHITECTURE.md](SHARED_CORE_ARCHITECTURE.md) for complete technical details.
+
 ## 🛡️ **Exoditical Moral Architecture**
 
 Parserator is built on **EMA principles** - a revolutionary approach to ethical software development:

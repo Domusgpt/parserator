@@ -1,8 +1,45 @@
-# Parserator Architecture: The Architect-Extractor Pattern
+# Parserator Architecture: Shared Core + Architect-Extractor Pattern
 
 ## Overview
 
-Parserator implements a revolutionary two-stage LLM architecture that dramatically reduces token costs while improving parsing accuracy. This document details the technical architecture, design decisions, and implementation patterns.
+Parserator implements a **lean shared core architecture** built on top of a revolutionary **two-stage LLM processing system**. This document details both the software architecture and the AI processing architecture.
+
+## Shared Core Architecture
+
+Parserator uses a lean shared core architecture that eliminates code duplication while maintaining peak performance:
+
+### Core Components
+
+#### @parserator/core (~100KB)
+- **HTTP Client**: Standardized API communication with retry logic
+- **Type System**: Shared TypeScript interfaces across all platforms
+- **Error Handling**: Unified ApiError classes and error normalization
+- **Request/Response**: Type-safe API interactions with validation
+- **Authentication**: Centralized API key management
+
+#### Platform SDKs (50KB each)
+- **Node SDK**: Thin wrapper with Node.js-specific conveniences (file parsing, streams)
+- **Python SDK**: Thin wrapper with Python conveniences (DataFrame support, numpy integration)
+- **Browser Extensions**: Direct core integration with browser-specific UI
+- **JetBrains Plugin**: Kotlin wrapper following core API patterns
+
+### Architecture Benefits
+- **75% bundle size reduction**: 250KB total vs 1MB duplicate code
+- **Single source of truth**: All platforms use identical API logic
+- **Consistent developer experience**: Same methods, errors, and responses everywhere
+- **Faster maintenance**: Bug fixes and features deploy to all platforms simultaneously
+- **Better testing**: Comprehensive test coverage of shared logic
+
+### Migration Strategy
+```typescript
+// Before (Node SDK)
+import { Parserator } from 'parserator-sdk';
+
+// After (same interface, shared core)
+import { Parserator } from 'parserator-sdk'; // Same API, smaller bundle
+```
+
+## AI Processing Architecture: Architect-Extractor Pattern
 
 ## Core Problem
 
