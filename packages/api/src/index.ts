@@ -12,6 +12,22 @@ import { FieldValue } from 'firebase-admin/firestore';
 // Initialize Firebase Admin
 admin.initializeApp();
 
+// Simple HTML sanitizer utility function
+function sanitizeHTML(text: string): string {
+  if (!text) return '';
+  return text.replace(/</g, '&lt;')
+             .replace(/>/g, '&gt;')
+             .replace(/&/g, '&amp;')
+             .replace(/"/g, '&quot;')
+             .replace(/'/g, '&#39;');
+}
+
+// Utility to escape backticks for template literal embedding
+function escapeBackticks(text: string): string {
+  if (!text) return '';
+  return text.replace(/`/g, '\\`');
+}
+
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 
 // Firestore instance
@@ -107,39 +123,140 @@ async function trackUsage(userId: string | null, tokensUsed: number, requestId: 
 }
 
 // Check usage limits
-async function checkUsageLimits(userId: string | null, tier: string): Promise<{allowed: boolean, reason?: string}> {
-  if (!userId) {
-    // For anonymous users, implement simple rate limiting (could use Redis in production)
-    return { allowed: true }; // Simplified for now
-  }
-  
+async function checkUsageLimits(
+  userId: string | null,
+  tier: string,
+  req: functions.https.Request // Add req parameter to access IP
+): Promise<{allowed: boolean, reason?: string}> {
   const limits = SUBSCRIPTION_LIMITS[tier as keyof typeof SUBSCRIPTION_LIMITS];
   if (!limits) {
     return { allowed: false, reason: 'Invalid subscription tier' };
   }
-  
-  if (limits.dailyRequests === -1) {
-    return { allowed: true }; // Unlimited
-  }
-  
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const dailyUsageDoc = await db.collection('usage').doc(userId).collection('daily').doc(today).get();
-    
-    if (dailyUsageDoc.exists) {
-      const usage = dailyUsageDoc.data();
-      if (usage && usage.requests >= limits.dailyRequests) {
-        return { 
-          allowed: false, 
-          reason: `Daily limit of ${limits.dailyRequests} requests exceeded` 
+
+  if (tier === 'anonymous') {
+    // Anonymous user rate limiting (RPM, daily, monthly)
+    let clientIp = req.ip || req.headers['x-forwarded-for'];
+    if (Array.isArray(clientIp)) {
+      clientIp = clientIp[0];
+    }
+    if (!clientIp) {
+      console.warn('Could not determine client IP for anonymous rate limiting. Using placeholder.');
+      clientIp = 'unknown_ip_placeholder';
+    }
+
+    // 1. RPM Check for Anonymous Users
+    const now = new Date();
+    const currentMinute = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
+    const rpmDocId = `${clientIp}_${currentMinute}`;
+    const rateLimitRef = db.collection('anonymousRateLimits').doc(rpmDocId);
+
+    try {
+      await db.runTransaction(async (transaction) => {
+        const doc = await transaction.get(rateLimitRef);
+        if (!doc.exists) {
+          transaction.set(rateLimitRef, { count: 1, createdAt: FieldValue.serverTimestamp() });
+        } else {
+          const newCount = (doc.data()?.count || 0) + 1;
+          if (newCount > limits.rateLimitRpm) {
+            throw new Error(`Anonymous rate limit of ${limits.rateLimitRpm} requests per minute exceeded`);
+          }
+          transaction.update(rateLimitRef, { count: newCount });
+        }
+      });
+    } catch (error: any) {
+      console.error('Anonymous RPM check Firestore transaction error:', error);
+      if (error.message.includes('Anonymous rate limit')) {
+        return {
+          allowed: false,
+          reason: error.message
         };
       }
+      // Fail closed for other transaction errors
+      return { allowed: false, reason: 'Rate limit check failed due to internal error (RPM)' };
+    }
+
+    // 2. Daily/Monthly Check for Anonymous Users
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const month = today.substring(0, 7); // YYYY-MM
+
+      // Daily check
+      if (limits.dailyRequests !== -1) {
+        const dailyUsageDoc = await db.collection('anonymousUsage').doc(clientIp).collection('daily').doc(today).get();
+        const dailyRequests = dailyUsageDoc.exists ? dailyUsageDoc.data()?.requests || 0 : 0;
+        if (dailyRequests >= limits.dailyRequests) {
+          return {
+            allowed: false,
+            reason: `Anonymous daily limit of ${limits.dailyRequests} requests exceeded for IP ${clientIp}`
+          };
+        }
+      }
+
+      // Monthly check
+      if (limits.monthlyRequests !== -1) {
+        const monthlyUsageDoc = await db.collection('anonymousUsage').doc(clientIp).get();
+        const monthlyRequests = monthlyUsageDoc.exists ? monthlyUsageDoc.data()?.monthly?.[month]?.requests || 0 : 0;
+        if (monthlyRequests >= limits.monthlyRequests) {
+          return {
+            allowed: false,
+            reason: `Anonymous monthly limit of ${limits.monthlyRequests} requests exceeded for IP ${clientIp}`
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Anonymous daily/monthly usage limit check error:', error);
+      return { allowed: false, reason: 'Rate limit check failed due to internal error (daily/monthly)' };
     }
     
     return { allowed: true };
-  } catch (error) {
-    console.error('Usage limit check error:', error);
-    return { allowed: true }; // Allow on error to prevent blocking
+
+  } else {
+    // Authenticated user usage limits
+    if (limits.dailyRequests === -1) { // Assuming -1 means unlimited for daily/monthly too
+      return { allowed: true }; // Unlimited tier
+    }
+
+    if (!userId) {
+      // This should not happen if tier is not anonymous
+      console.error('Error: userId is null for non-anonymous tier.');
+      return { allowed: false, reason: 'Internal configuration error: User ID missing for authenticated tier.'};
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const month = today.substring(0, 7);
+
+      // Daily check for authenticated user
+      const dailyUsageDoc = await db.collection('usage').doc(userId).collection('daily').doc(today).get();
+      if (dailyUsageDoc.exists) {
+        const usage = dailyUsageDoc.data();
+        if (usage && usage.requests >= limits.dailyRequests) {
+          return {
+            allowed: false,
+            reason: `Daily limit of ${limits.dailyRequests} requests exceeded`
+          };
+        }
+      }
+
+      // Monthly check for authenticated user (simplified: checking total monthly against limit)
+      // Note: The original `trackUsage` updates `monthly.[month].requests`. We'll use that.
+      const monthlyUsageDoc = await db.collection('usage').doc(userId).get();
+      if (monthlyUsageDoc.exists && limits.monthlyRequests !== -1) {
+          const monthlyData = monthlyUsageDoc.data();
+          const currentMonthUsage = monthlyData?.monthly?.[month]?.requests || 0;
+          if (currentMonthUsage >= limits.monthlyRequests) {
+              return {
+                  allowed: false,
+                  reason: `Monthly limit of ${limits.monthlyRequests} requests exceeded`
+              };
+          }
+      }
+
+      return { allowed: true };
+    } catch (error) {
+      console.error('Authenticated usage limit check error:', error);
+      return { allowed: false, reason: 'Rate limit check failed due to internal error' };
+    }
   }
 }
 
@@ -283,9 +400,22 @@ export const app = functions.onRequest({
       return;
     }
     
-    // Store user info for request processing
+    // Store user info for request processing (needs to be before checkUsageLimits)
     (req as any).userTier = userTier;
     (req as any).userId = userId;
+
+    // Check usage limits before processing
+    // Pass the original 'req' object to checkUsageLimits
+    const usageCheck = await checkUsageLimits(userId, userTier, req);
+    if (!usageCheck.allowed) {
+      res.status(429).json({
+        error: 'Usage limit exceeded',
+        message: usageCheck.reason,
+        tier: userTier,
+        upgradeUrl: 'https://parserator.com/pricing'
+      });
+      return;
+    }
   }
 
   // Health check endpoint
@@ -359,11 +489,14 @@ export const app = functions.onRequest({
         }
       });
 
-      const sample = body.inputData.substring(0, 1000); // First 1KB for planning
+      // Escape backticks in user-provided data before embedding in prompts
+      const safeSample = escapeBackticks(body.inputData.substring(0, 1000));
+      const safeInputData = escapeBackticks(body.inputData);
+
       const architectPrompt = `You are the Architect in a two-stage parsing system. Create a detailed SearchPlan for extracting data.
 
 SAMPLE DATA:
-${sample}
+${safeSample}
 
 TARGET SCHEMA:
 ${JSON.stringify(body.outputSchema, null, 2)}
@@ -413,7 +546,7 @@ SEARCH PLAN:
 ${JSON.stringify(searchPlan, null, 2)}
 
 FULL INPUT DATA:
-${body.inputData}
+${safeInputData}
 
 INSTRUCTIONS:
 - Follow the SearchPlan exactly as specified by the Architect
@@ -446,9 +579,33 @@ Execute the plan and return the extracted data.`;
       const tokensUsed = Math.floor((architectPrompt.length + extractorPrompt.length) / 4);
       const requestId = `req_${Date.now()}`;
 
-      // Track usage for authenticated users
-      if ((req as any).userId) {
-        await trackUsage((req as any).userId, tokensUsed, requestId);
+      // Track usage for authenticated users and anonymous users (by IP)
+      // For anonymous, userId is the IP. For authenticated, it's the actual userId.
+      const usageIdentifier = (req as any).userId || (req.ip || req.headers['x-forwarded-for'] || 'unknown_ip_placeholder');
+      // Ensure usageIdentifier is a string if it's an array from x-forwarded-for
+      const finalUsageIdentifier = Array.isArray(usageIdentifier) ? usageIdentifier[0] : usageIdentifier;
+
+      if (finalUsageIdentifier) { // Only track if we have an identifier
+          if ((req as any).userTier === 'anonymous') {
+              // Increment daily/monthly for anonymous users (RPM is already handled)
+              const today = new Date().toISOString().split('T')[0];
+              const month = today.substring(0, 7);
+              try {
+                  await db.collection('anonymousUsage').doc(finalUsageIdentifier).collection('daily').doc(today).set({
+                      requests: FieldValue.increment(1),
+                      lastRequest: new Date()
+                  }, { merge: true });
+                  await db.collection('anonymousUsage').doc(finalUsageIdentifier).set({
+                      [`monthly.${month}.requests`]: FieldValue.increment(1),
+                      lastRequest: new Date()
+                  }, { merge: true });
+              } catch (e) {
+                  console.error("Error tracking anonymous usage:", e);
+              }
+          } else {
+              // Existing trackUsage for authenticated users
+              await trackUsage(finalUsageIdentifier, tokensUsed, requestId);
+          }
       }
 
       // Return successful response
@@ -479,7 +636,7 @@ Execute the plan and return the extracted data.`;
         success: false,
         error: {
           code: 'PARSE_FAILED',
-          message: error instanceof Error ? error.message : 'Parsing failed',
+          message: "An error occurred while processing your request. Please check your input or try again later.",
           details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
         },
         metadata: {
@@ -513,19 +670,22 @@ Execute the plan and return the extracted data.`;
       ).join('');
       const apiKey = keyPrefix + keyBody;
       
+      const rawApiKeyName = req.body.name || 'Default API Key';
+      const sanitizedApiKeyName = sanitizeHTML(rawApiKeyName);
+
       // Store in Firestore
       await db.collection('api_keys').doc(apiKey).set({
         userId: userId,
         active: true,
         created: new Date(),
-        name: req.body.name || 'Default API Key',
+        name: sanitizedApiKeyName, // Store sanitized name
         environment: 'test'
       });
       
       res.json({
         success: true,
         apiKey: apiKey,
-        name: req.body.name || 'Default API Key',
+        name: sanitizedApiKeyName, // Return sanitized name
         created: new Date().toISOString()
       });
       

@@ -80,60 +80,98 @@ async function checkUserLimits(userId: string, tier: string): Promise<{ allowed:
     };
     
   } catch (error) {
-    console.error('Usage limit check error:', error);
-    return { allowed: true }; // Allow on error to prevent blocking
+    console.error('User usage limit check error:', error);
+    // Fail closed
+    return { allowed: false, reason: 'User rate limit check failed due to internal error' };
   }
 }
 
 async function checkAnonymousLimits(clientIp: string): Promise<{ allowed: boolean; reason?: string }> {
+  const limits = TIER_LIMITS.anonymous;
+
+  // 1. RPM Check (existing logic, with improved error handling)
   const now = new Date();
-  // Construct a document ID that changes every minute
   const currentMinute = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
-  const docId = `${clientIp}_${currentMinute}`;
-  const rateLimitRef = db.collection('anonymousRateLimits').doc(docId);
+  // Using 'anonymousRateLimitsRPM' to distinguish from potential daily/monthly docs if stored differently.
+  const rpmDocId = `${clientIp}_${currentMinute}`;
+  const rateLimitRef = db.collection('anonymousRateLimitsRPM').doc(rpmDocId);
 
   try {
     await db.runTransaction(async (transaction) => {
       const doc = await transaction.get(rateLimitRef);
       if (!doc.exists) {
-        // Document for this IP and minute doesn't exist, create it
-        // Adding createdAt for potential TTL policies later, though Firestore doesn't directly support field-based TTL on subcollections easily.
-        // A separate cleanup function/service would be needed if strict TTL is required.
         transaction.set(rateLimitRef, { count: 1, createdAt: admin.firestore.FieldValue.serverTimestamp() });
       } else {
         const newCount = (doc.data()?.count || 0) + 1;
-        if (newCount > TIER_LIMITS.anonymous.rpmLimit) {
-          // Explicitly throw an error that includes the reason for easier catching
-          throw new Error(`Anonymous rate limit of ${TIER_LIMITS.anonymous.rpmLimit} requests per minute exceeded`);
+        if (newCount > limits.rpmLimit) {
+          throw new Error(`Anonymous rate limit of ${limits.rpmLimit} requests per minute exceeded`);
         }
         transaction.update(rateLimitRef, { count: newCount });
       }
     });
-    return { allowed: true };
   } catch (error: any) {
-    // Check if the error is the one we threw for rate limit exceeded
+    console.error('Anonymous RPM check Firestore transaction error:', error);
     if (error.message.includes('Anonymous rate limit')) {
-      return {
-        allowed: false,
-        reason: error.message
-      };
+      return { allowed: false, reason: error.message };
     }
-    // Log other transaction errors but allow request to proceed to avoid blocking legitimate users due to transient Firestore issues
-    console.error('Error in checkAnonymousLimits Firestore transaction:', error);
-    // Default to allow if it's an unknown error to prevent service disruption
-    return { allowed: true };
+    // Fail closed for other transaction errors
+    return { allowed: false, reason: 'Anonymous RPM check failed due to internal error' };
   }
+
+  // 2. Daily/Monthly Check for Anonymous Users
+  // Using 'anonymousUsage' collection to align with index.ts modifications
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const month = today.substring(0, 7); // YYYY-MM
+
+    // Daily check
+    if (limits.dailyRequests !== -1) {
+      const dailyUsageDoc = await db.collection('anonymousUsage').doc(clientIp).collection('daily').doc(today).get();
+      const dailyRequests = dailyUsageDoc.exists ? dailyUsageDoc.data()?.requests || 0 : 0;
+
+      // Note: This check only prevents further requests. Incrementing happens in usageMiddleware or main handler.
+      if (dailyRequests >= limits.dailyRequests) {
+        return {
+          allowed: false,
+          reason: `Anonymous daily limit of ${limits.dailyRequests} requests exceeded for IP ${clientIp}`
+        };
+      }
+    }
+
+    // Monthly check
+    if (limits.monthlyRequests !== -1) {
+      const monthlyUsageDoc = await db.collection('anonymousUsage').doc(clientIp).get();
+      const monthlyRequests = monthlyUsageDoc.exists ? monthlyUsageDoc.data()?.monthly?.[month]?.requests || 0 : 0;
+
+      // Note: This check only prevents further requests. Incrementing happens in usageMiddleware or main handler.
+      if (monthlyRequests >= limits.monthlyRequests) {
+        return {
+          allowed: false,
+          reason: `Anonymous monthly limit of ${limits.monthlyRequests} requests exceeded for IP ${clientIp}`
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Anonymous daily/monthly usage limit check error:', error);
+    // Fail closed
+    return { allowed: false, reason: 'Anonymous daily/monthly check failed due to internal error' };
+  }
+
+  return { allowed: true }; // All checks passed
 }
 
 export const rateLimitMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  let clientIp = 'unknown'; // Initialize clientIp
   try {
     if (req.isAnonymous) {
-      // Rate limit anonymous users by IP
-      const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
-      // Ensure to await the async function
+      clientIp = req.ip || req.connection.remoteAddress || 'unknown_ip_placeholder_middleware';
+      if (Array.isArray(clientIp)) { // Handle cases where req.ip might be an array
+        clientIp = clientIp[0];
+      }
       const limitCheck = await checkAnonymousLimits(clientIp);
       
       if (!limitCheck.allowed) {
+        console.warn(`Anonymous rate limit exceeded for IP: ${clientIp}, Reason: ${limitCheck.reason}`);
         return res.status(429).json({
           error: 'Rate limit exceeded',
           message: limitCheck.reason,
@@ -143,28 +181,42 @@ export const rateLimitMiddleware = async (req: AuthenticatedRequest, res: Respon
         });
       }
     } else {
-      // Check authenticated user limits
-      const limitCheck = await checkUserLimits(req.user!.id, req.user!.tier);
+      if (!req.user || !req.user.id || !req.user.tier) {
+        console.error('User data missing in authenticated request:', req.user);
+        // This case should ideally be caught by authMiddleware first
+        return res.status(401).json({ error: 'Unauthorized', message: 'User authentication data is missing.' });
+      }
+      const limitCheck = await checkUserLimits(req.user.id, req.user.tier);
       
       if (!limitCheck.allowed) {
+        console.warn(`User rate limit exceeded for User ID: ${req.user.id}, Tier: ${req.user.tier}, Reason: ${limitCheck.reason}`);
         return res.status(429).json({
           error: 'Usage limit exceeded',
           message: limitCheck.reason,
-          tier: req.user!.tier,
+          tier: req.user.tier,
           usage: limitCheck.usage,
           upgradeUrl: 'https://parserator.com/pricing'
         });
       }
       
-      // Add usage info to request for downstream middleware
       (req as any).currentUsage = limitCheck.usage;
     }
     
     next();
     
-  } catch (error) {
-    console.error('Rate limit middleware error:', error);
-    // Allow request to proceed on error to prevent false positives
+  } catch (error: any) {
+    // Log more details about the error in the main middleware function
+    console.error('Critical error in rateLimitMiddleware:', {
+      errorMessage: error.message,
+      errorStack: error.stack,
+      userId: req.user?.id,
+      isAnonymous: req.isAnonymous,
+      clientIp: clientIp, // Log the determined client IP
+      requestUrl: req.originalUrl,
+    });
+    // Still calling next() to avoid obscuring other potential issues,
+    // as critical fail-closed logic is within checkUserLimits/checkAnonymousLimits.
+    // Depending on policy, could return 500 here.
     next();
   }
 };
