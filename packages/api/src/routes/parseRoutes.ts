@@ -89,6 +89,29 @@ export const parseHandler = async (req: AuthenticatedRequest, res: Response) => 
         }
       });
     }
+
+    // Check inputData size
+    const MAX_INPUT_SIZE_BYTES = 1 * 1024 * 1024; // 1MB
+    if (typeof inputData !== 'string') { // Should be string, but good to check type
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_INPUT_TYPE',
+                message: 'inputData must be a string.'
+            }
+        });
+    }
+    const inputDataSizeBytes = Buffer.byteLength(inputData, 'utf-8');
+
+    if (inputDataSizeBytes > MAX_INPUT_SIZE_BYTES) {
+      return res.status(413).json({ // 413 Payload Too Large
+        success: false,
+        error: {
+          code: 'PAYLOAD_TOO_LARGE',
+          message: `Input data exceeds the maximum allowed size of 1MB. Received: ${Math.round(inputDataSizeBytes / (1024 * 1024) * 100) / 100}MB.`
+        }
+      });
+    }
     
     // Get Gemini API key from environment
     const apiKey = process.env.GEMINI_API_KEY;
@@ -142,13 +165,33 @@ Create a comprehensive SearchPlan that the Extractor can follow exactly.`;
     
     let searchPlan;
     try {
-      const parsed = JSON.parse(architectResponse);
-      searchPlan = parsed.searchPlan;
+      const parsedArchitect = JSON.parse(architectResponse);
+      // Ensure searchPlan is correctly extracted, even if the root object is the plan itself
+      searchPlan = parsedArchitect.searchPlan || parsedArchitect;
+      if (!searchPlan || typeof searchPlan !== 'object' || !searchPlan.steps) {
+        // Basic validation that searchPlan looks like a plan
+        console.error('❌ Architect response parsed, but searchPlan structure is invalid:', parsedArchitect);
+        return res.status(422).json({
+            success: false,
+            error: {
+                code: 'ARCHITECT_INVALID_RESPONSE_STRUCTURE',
+                message: 'Failed to parse valid SearchPlan structure from Architect service.',
+                details: process.env.NODE_ENV === 'development' ? { rawResponse: architectResponse } : undefined,
+            },
+        });
+      }
       console.log('✅ Architect structured output success');
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
-      console.error('❌ Architect structured output failed:', errorMessage);
-      throw new Error(`Architect failed to create valid SearchPlan: ${errorMessage}`);
+      console.error('❌ Architect JSON parsing failed:', errorMessage);
+      return res.status(422).json({
+        success: false,
+        error: {
+          code: 'ARCHITECT_PARSE_FAILED',
+          message: 'Failed to parse response from Architect service. The input data may have caused an issue.',
+          details: process.env.NODE_ENV === 'development' ? { error: errorMessage, rawResponse: architectResponse } : undefined,
+        },
+      });
     }
 
     // STAGE 2: EXTRACTOR with dynamic structured output
@@ -188,11 +231,30 @@ Execute the plan and return the extracted data.`;
     let parsedData;
     try {
       parsedData = JSON.parse(extractorResponse);
+      // Add a basic check to see if parsedData is an object, as expected
+      if (typeof parsedData !== 'object' || parsedData === null) {
+        console.error('❌ Extractor response parsed, but is not a valid object:', parsedData);
+        return res.status(422).json({
+            success: false,
+            error: {
+                code: 'EXTRACTOR_INVALID_RESPONSE_STRUCTURE',
+                message: 'Extractor service returned a non-object response.',
+                details: process.env.NODE_ENV === 'development' ? { rawResponse: extractorResponse } : undefined,
+            },
+        });
+      }
       console.log('✅ Extractor structured output success');
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
-      console.error('❌ Extractor structured output failed:', errorMessage);
-      throw new Error(`Extractor failed to return valid JSON: ${errorMessage}`);
+      console.error('❌ Extractor JSON parsing failed:', errorMessage);
+      return res.status(422).json({
+        success: false,
+        error: {
+          code: 'EXTRACTOR_PARSE_FAILED',
+          message: 'Failed to parse response from Extractor service. The input data or search plan may have caused an issue.',
+          details: process.env.NODE_ENV === 'development' ? { error: errorMessage, rawResponse: extractorResponse } : undefined,
+        },
+      });
     }
 
     const processingTime = Date.now() - startTime;
