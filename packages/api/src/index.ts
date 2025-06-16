@@ -1,6 +1,6 @@
 /**
  * Parserator Production API with Gemini Structured Outputs
- * Fixed version that eliminates JSON parsing errors
+ * Enhanced with comprehensive security fixes and input validation
  */
 
 import * as functions from 'firebase-functions/v2/https';
@@ -8,6 +8,12 @@ import { defineSecret } from 'firebase-functions/params';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { rateLimitMiddleware } from './middleware/rateLimitMiddleware';
+import { 
+  sanitizeApiKeyName, 
+  sanitizeParseInput, 
+  validateOutputSchema 
+} from './utils/inputSanitizer';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -106,11 +112,11 @@ async function trackUsage(userId: string | null, tokensUsed: number, requestId: 
   }
 }
 
-// Check usage limits
+// Check usage limits with fail-closed behavior
 async function checkUsageLimits(userId: string | null, tier: string): Promise<{allowed: boolean, reason?: string}> {
   if (!userId) {
-    // For anonymous users, implement simple rate limiting (could use Redis in production)
-    return { allowed: true }; // Simplified for now
+    // Anonymous users are handled by IP-based rate limiting in middleware
+    return { allowed: true };
   }
   
   const limits = SUBSCRIPTION_LIMITS[tier as keyof typeof SUBSCRIPTION_LIMITS];
@@ -124,8 +130,10 @@ async function checkUsageLimits(userId: string | null, tier: string): Promise<{a
   
   try {
     const today = new Date().toISOString().split('T')[0];
-    const dailyUsageDoc = await db.collection('usage').doc(userId).collection('daily').doc(today).get();
+    const month = today.substring(0, 7); // YYYY-MM
     
+    // Check daily limits
+    const dailyUsageDoc = await db.collection('usage').doc(userId).collection('daily').doc(today).get();
     if (dailyUsageDoc.exists) {
       const usage = dailyUsageDoc.data();
       if (usage && usage.requests >= limits.dailyRequests) {
@@ -136,10 +144,26 @@ async function checkUsageLimits(userId: string | null, tier: string): Promise<{a
       }
     }
     
+    // Check monthly limits
+    if (limits.monthlyRequests !== -1) {
+      const usageDoc = await db.collection('usage').doc(userId).get();
+      if (usageDoc.exists) {
+        const usage = usageDoc.data();
+        const monthlyUsage = usage?.monthly?.[month]?.requests || 0;
+        if (monthlyUsage >= limits.monthlyRequests) {
+          return { 
+            allowed: false, 
+            reason: `Monthly limit of ${limits.monthlyRequests} requests exceeded` 
+          };
+        }
+      }
+    }
+    
     return { allowed: true };
   } catch (error) {
     console.error('Usage limit check error:', error);
-    return { allowed: true }; // Allow on error to prevent blocking
+    // Fail-closed: deny request if usage check fails
+    return { allowed: false, reason: 'Usage verification temporarily unavailable' };
   }
 }
 
@@ -317,19 +341,48 @@ export const app = functions.onRequest({
 
   // Main parsing endpoint
   if (path === '/v1/parse' && req.method === 'POST') {
+    // Apply rate limiting middleware
+    try {
+      await new Promise<void>((resolve, reject) => {
+        rateLimitMiddleware(req, res, (error?: any) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+    } catch (rateLimitError) {
+      // Rate limit middleware already sent response
+      return;
+    }
+
     const body = req.body || {};
 
-    // Validate input
-    if (!body.inputData || !body.outputSchema) {
+    // Enhanced input validation with sanitization
+    const inputValidation = sanitizeParseInput(body.inputData);
+    if (!inputValidation.isValid) {
       res.status(400).json({
         success: false,
         error: {
           code: 'INVALID_INPUT',
-          message: 'inputData and outputSchema are required'
+          message: inputValidation.error
         }
       });
       return;
     }
+
+    const schemaValidation = validateOutputSchema(body.outputSchema);
+    if (!schemaValidation.isValid) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_SCHEMA',
+          message: schemaValidation.error
+        }
+      });
+      return;
+    }
+
+    // Use sanitized input
+    const sanitizedInputData = inputValidation.sanitized;
 
     // Get Gemini API key
     const apiKey = geminiApiKey.value();
@@ -359,7 +412,7 @@ export const app = functions.onRequest({
         }
       });
 
-      const sample = body.inputData.substring(0, 1000); // First 1KB for planning
+      const sample = sanitizedInputData.substring(0, 1000); // First 1KB for planning
       const architectPrompt = `You are the Architect in a two-stage parsing system. Create a detailed SearchPlan for extracting data.
 
 SAMPLE DATA:
@@ -413,7 +466,7 @@ SEARCH PLAN:
 ${JSON.stringify(searchPlan, null, 2)}
 
 FULL INPUT DATA:
-${body.inputData}
+${sanitizedInputData}
 
 INSTRUCTIONS:
 - Follow the SearchPlan exactly as specified by the Architect
@@ -475,16 +528,16 @@ Execute the plan and return the extracted data.`;
       
       const processingTime = Date.now() - startTime;
       
+      // Enhanced error handling - prevent information leakage
       res.status(500).json({
         success: false,
         error: {
           code: 'PARSE_FAILED',
-          message: error instanceof Error ? error.message : 'Parsing failed',
-          details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
+          message: 'Unable to process the request. Please check your input data and try again.',
+          requestId: `req_${Date.now()}`
         },
         metadata: {
           processingTimeMs: processingTime,
-          requestId: `req_${Date.now()}`,
           timestamp: new Date().toISOString(),
           version: '1.0.0'
         }
@@ -513,19 +566,22 @@ Execute the plan and return the extracted data.`;
       ).join('');
       const apiKey = keyPrefix + keyBody;
       
+      // Sanitize API key name before storage
+      const sanitizedName = sanitizeApiKeyName(req.body.name || 'Default API Key');
+      
       // Store in Firestore
       await db.collection('api_keys').doc(apiKey).set({
         userId: userId,
         active: true,
         created: new Date(),
-        name: req.body.name || 'Default API Key',
+        name: sanitizedName,
         environment: 'test'
       });
       
       res.json({
         success: true,
         apiKey: apiKey,
-        name: req.body.name || 'Default API Key',
+        name: sanitizedName,
         created: new Date().toISOString()
       });
       
