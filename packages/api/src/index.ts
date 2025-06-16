@@ -5,7 +5,7 @@
 
 import * as functions from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+// Removed GoogleGenerativeAI and SchemaType static imports
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -143,67 +143,78 @@ async function checkUsageLimits(userId: string | null, tier: string): Promise<{a
   }
 }
 
+// Function to dynamically load Google Generative AI modules
+async function loadGoogleGenAIModules() {
+  const genAIModule = await import('@google/generative-ai');
+  return {
+    GoogleGenerativeAI: genAIModule.GoogleGenerativeAI,
+    SchemaType: genAIModule.SchemaType
+  };
+}
+
 // Define structured output schemas for Gemini
-const architectSchema = {
-  type: SchemaType.OBJECT as SchemaType.OBJECT,
-  properties: {
-    searchPlan: {
-      type: SchemaType.OBJECT as SchemaType.OBJECT,
-      properties: {
-        steps: {
-          type: SchemaType.ARRAY as SchemaType.ARRAY,
-          items: {
-            type: SchemaType.OBJECT as SchemaType.OBJECT,
-            properties: {
-              field: { type: SchemaType.STRING as SchemaType.STRING },
-              instruction: { type: SchemaType.STRING as SchemaType.STRING },
-              pattern: { type: SchemaType.STRING as SchemaType.STRING },
-              validation: { type: SchemaType.STRING as SchemaType.STRING }
-            },
-            required: ['field', 'instruction', 'pattern', 'validation']
-          }
+function getArchitectSchema(SchemaType: any) {
+  return {
+    type: SchemaType.OBJECT as any,
+    properties: {
+      searchPlan: {
+        type: SchemaType.OBJECT as any,
+        properties: {
+          steps: {
+            type: SchemaType.ARRAY as any,
+            items: {
+              type: SchemaType.OBJECT as any,
+              properties: {
+                field: { type: SchemaType.STRING as any },
+                instruction: { type: SchemaType.STRING as any },
+                pattern: { type: SchemaType.STRING as any },
+                validation: { type: SchemaType.STRING as any }
+              },
+              required: ['field', 'instruction', 'pattern', 'validation']
+            }
+          },
+          confidence: { type: SchemaType.NUMBER as any },
+          strategy: { type: SchemaType.STRING as any }
         },
-        confidence: { type: SchemaType.NUMBER as SchemaType.NUMBER },
-        strategy: { type: SchemaType.STRING as SchemaType.STRING }
-      },
-      required: ['steps', 'confidence', 'strategy']
-    }
-  },
-  required: ['searchPlan']
-};
+        required: ['steps', 'confidence', 'strategy']
+      }
+    },
+    required: ['searchPlan']
+  };
+}
 
 // Dynamic schema generator for Extractor output
-function createExtractorSchema(outputSchema: Record<string, any>) {
+function createExtractorSchema(outputSchema: Record<string, any>, SchemaType: any) {
   const properties: any = {};
   
   for (const [key, type] of Object.entries(outputSchema)) {
     if (typeof type === 'string') {
       switch (type.toLowerCase()) {
         case 'string':
-          properties[key] = { type: SchemaType.STRING as SchemaType.STRING };
+          properties[key] = { type: SchemaType.STRING as any };
           break;
         case 'number':
-          properties[key] = { type: SchemaType.NUMBER as SchemaType.NUMBER };
+          properties[key] = { type: SchemaType.NUMBER as any };
           break;
         case 'boolean':
-          properties[key] = { type: SchemaType.BOOLEAN as SchemaType.BOOLEAN };
+          properties[key] = { type: SchemaType.BOOLEAN as any };
           break;
         case 'array':
           properties[key] = {
-            type: SchemaType.ARRAY as SchemaType.ARRAY,
-            items: { type: SchemaType.STRING as SchemaType.STRING }
+            type: SchemaType.ARRAY as any,
+            items: { type: SchemaType.STRING as any }
           };
           break;
         default:
-          properties[key] = { type: SchemaType.STRING as SchemaType.STRING };
+          properties[key] = { type: SchemaType.STRING as any };
       }
     } else {
-      properties[key] = { type: SchemaType.STRING as SchemaType.STRING };
+      properties[key] = { type: SchemaType.STRING as any };
     }
   }
   
   return {
-    type: SchemaType.OBJECT as SchemaType.OBJECT,
+    type: SchemaType.OBJECT as any,
     properties,
     required: Object.keys(outputSchema)
   };
@@ -347,15 +358,22 @@ export const app = functions.onRequest({
     const startTime = Date.now();
 
     try {
+      // Load Google Generative AI modules
+      const { GoogleGenerativeAI, SchemaType } = await loadGoogleGenAIModules();
+
       // Initialize Gemini with structured output support
       const genAI = new GoogleGenerativeAI(apiKey);
       
+      // Get schema instances
+      const architectSchemaInstance = getArchitectSchema(SchemaType);
+      const extractorSchemaInstance = createExtractorSchema(body.outputSchema, SchemaType);
+
       // STAGE 1: ARCHITECT with structured output
       const architectModel = genAI.getGenerativeModel({
         model: 'gemini-1.5-flash',
         generationConfig: {
           responseMimeType: 'application/json',
-          responseSchema: architectSchema
+          responseSchema: architectSchemaInstance
         }
       });
 
@@ -398,12 +416,12 @@ Create a comprehensive SearchPlan that the Extractor can follow exactly.`;
       }
 
       // STAGE 2: EXTRACTOR with dynamic structured output
-      const extractorSchema = createExtractorSchema(body.outputSchema);
+      // const extractorSchema = createExtractorSchema(body.outputSchema); // Already created above
       const extractorModel = genAI.getGenerativeModel({
         model: 'gemini-1.5-flash',
         generationConfig: {
           responseMimeType: 'application/json',
-          responseSchema: extractorSchema
+          responseSchema: extractorSchemaInstance
         }
       });
 
