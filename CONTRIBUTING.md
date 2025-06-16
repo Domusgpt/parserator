@@ -278,7 +278,7 @@ Your contributions make Parserator better for everyone. Whether you're fixing a 
 ---
 
 ### License
-By contributing, you agree that your contributions will be licensed under the same MIT License that covers the project.
+By contributing, you agree that your contributions will be subject to the project's PROPRIETARY [LICENSE](LICENSE). All contributions should align with the principles of Exoditical Moral Architecture (EMA) as detailed in our [EMA_MANIFESTO.md](EMA_MANIFESTO.md).
 
 ### Questions?
 Feel free to reach out:

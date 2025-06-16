@@ -2,7 +2,6 @@
 
 [![PyPI version](https://badge.fury.io/py/parserator-sdk.svg)](https://badge.fury.io/py/parserator-sdk)
 [![Python Support](https://img.shields.io/pypi/pyversions/parserator-sdk)](https://pypi.org/project/parserator-sdk/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Official Python SDK for [Parserator](https://parserator.com) - Intelligent data parsing using the Architect-Extractor pattern.
 
@@ -393,7 +392,7 @@ Parse unstructured data into structured format.
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/domusgpt/parserator/blob/main/LICENSE) file for details.
+This project is under a PROPRIETARY license. See the [LICENSE](LICENSE) file in this directory for details. It adheres to the principles of Exoditical Moral Architecture (EMA), ensuring your right to digital sovereignty and freedom to migrate.
 
 ## 🤝 Contributing
 

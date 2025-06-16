@@ -3,7 +3,6 @@
 **The Structured Data Layer for AI Agents**
 
 [![npm version](https://img.shields.io/npm/v/parserator.svg)](https://www.npmjs.com/package/parserator)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![EMA Compliant](https://img.shields.io/badge/EMA-Compliant-green.svg)](#exoditical-moral-architecture)
 
 Transform any unstructured input into agent-ready JSON with 95% accuracy. Built for Google ADK, MCP, LangChain, and any agent framework using our revolutionary two-stage Architect-Extractor pattern.
@@ -393,7 +392,7 @@ Parserator is built on **EMA principles** - a revolutionary approach to ethical 
 
 ## 📄 **License**
 
-MIT License - see [LICENSE](LICENSE) file for details.
+This project is under a PROPRIETARY license. See the [LICENSE](LICENSE) file for details. It adheres to the principles of Exoditical Moral Architecture (EMA), ensuring your right to digital sovereignty and freedom to migrate, as outlined in our [EMA_MANIFESTO.md](EMA_MANIFESTO.md).
 
 **EMA Commitment**: This project follows Exoditical Moral Architecture principles, ensuring your right to digital sovereignty and freedom to migrate.
 
