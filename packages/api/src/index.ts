@@ -545,6 +545,7 @@ export const app = functions.onRequest({
     }
 
     const startTime = Date.now();
+    let searchPlan: any = null; // Declare in outer scope for error handling
 
     try {
       // Initialize Gemini with structured output support
@@ -705,7 +706,6 @@ RESPOND WITH ONLY THE JSON - NO EXPLANATIONS OR MARKDOWN FORMATTING.`;
       const architectResult = await architectModel.generateContent(architectPrompt);
       const architectResponse = architectResult.response.text();
       
-      let searchPlan;
       try {
         searchPlan = JSON.parse(architectResponse);
         console.log('✅ Architect structured output:', JSON.stringify(searchPlan, null, 2));
