@@ -38,9 +38,54 @@ const db = admin.firestore();
 const architectPlanCache = new Map<string, any>();
 const MAX_CACHE_SIZE = 100; // Max number of plans to store
 
-function generateCacheKey(outputSchema: any): string {
+// Input Fingerprinting Function
+function generateInputFingerprint(dataSample: string): string {
+  if (!dataSample || dataSample.trim() === '') {
+    return 'empty:true';
+  }
+
+  // 1. Presence Flags
+  const hasJsonChars = /[\{\}\[\]]/.test(dataSample);
+  const hasXmlChars = /<.*?>/.test(dataSample); // Basic check for tags
+
+  // 2. Line-Based Metrics
+  const lines = dataSample.split('\n');
+  const numLines = lines.length;
+  const nonEmptyLines = lines.filter(line => line.trim() !== '');
+  let avgLineLength = 0;
+  if (nonEmptyLines.length > 0) {
+    const totalLengthOfNonEmptyLines = nonEmptyLines.reduce((sum, line) => sum + line.length, 0);
+    avgLineLength = Math.round(totalLengthOfNonEmptyLines / nonEmptyLines.length);
+  }
+
+  // 3. Content-Type Hints
+  const colonCount = (dataSample.match(/:/g) || []).length;
+
+  const nonWhitespaceChars = dataSample.replace(/\s/g, '');
+  let numericDensity = 0;
+  if (nonWhitespaceChars.length > 0) {
+    const digitCount = (nonWhitespaceChars.match(/\d/g) || []).length;
+    numericDensity = parseFloat((digitCount / nonWhitespaceChars.length).toFixed(2)); // Rounded to 2 decimal places
+  }
+
+  // Construct Fingerprint String
+  const fingerprintParts = [
+    `json:${hasJsonChars}`,
+    `xml:${hasXmlChars}`,
+    `lines:${numLines}`,
+    `avgLen:${avgLineLength}`,
+    `colons:${colonCount}`,
+    `numDens:${numericDensity}`
+  ];
+
+  return fingerprintParts.join('|');
+}
+
+
+function generateCacheKey(outputSchema: any, inputFingerprint: string): string {
   const schemaString = JSON.stringify(outputSchema);
-  return crypto.createHash('sha256').update(schemaString).digest('hex');
+  const combinedString = `${schemaString}||${inputFingerprint}`; // Separator for clarity
+  return crypto.createHash('sha256').update(combinedString).digest('hex');
 }
 
 function getCachedPlan(key: string): any | undefined {
@@ -518,7 +563,12 @@ export const app = functions.onRequest({
 
       // >>> New Caching Logic Starts Here <<<
       const forceRefreshArchitect = !!body.forceRefreshArchitect;
-      const cacheKey = generateCacheKey(body.outputSchema);
+
+      // Generate input fingerprint from the raw sample for cache key generation
+      const sampleForFingerprint = body.inputData.substring(0, 1000); // Raw sample
+      const inputFingerprint = generateInputFingerprint(sampleForFingerprint);
+
+      const cacheKey = generateCacheKey(body.outputSchema, inputFingerprint);
       let planFromCache = false;
 
       if (!forceRefreshArchitect) {
@@ -548,12 +598,13 @@ export const app = functions.onRequest({
         });
 
         // Escape backticks in user-provided data before embedding in prompts
-        const safeSample = escapeBackticks(body.inputData.substring(0, 1000));
+        // Note: safeSample is for the prompt, sampleForFingerprint was for the fingerprint.
+        const safeSampleForPrompt = escapeBackticks(sampleForFingerprint);
 
         const architectPrompt = `You are the Architect in a two-stage parsing system. Create a detailed SearchPlan for extracting data.
 
 SAMPLE DATA:
-${safeSample}
+${safeSampleForPrompt}
 
 TARGET SCHEMA:
 ${JSON.stringify(body.outputSchema, null, 2)}
