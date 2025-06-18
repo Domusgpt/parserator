@@ -6,6 +6,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import * as crypto from 'crypto';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -32,6 +33,85 @@ const geminiApiKey = defineSecret('GEMINI_API_KEY');
 
 // Firestore instance
 const db = admin.firestore();
+
+// Architect Plan Cache
+const architectPlanCache = new Map<string, any>();
+const MAX_CACHE_SIZE = 100; // Max number of plans to store
+
+// Input Fingerprinting Function
+function generateInputFingerprint(dataSample: string): string {
+  if (!dataSample || dataSample.trim() === '') {
+    return 'empty:true';
+  }
+
+  // 1. Presence Flags
+  const hasJsonChars = /[\{\}\[\]]/.test(dataSample);
+  const hasXmlChars = /<.*?>/.test(dataSample); // Basic check for tags
+
+  // 2. Line-Based Metrics
+  const lines = dataSample.split('\n');
+  const numLines = lines.length;
+  const nonEmptyLines = lines.filter(line => line.trim() !== '');
+  let avgLineLength = 0;
+  if (nonEmptyLines.length > 0) {
+    const totalLengthOfNonEmptyLines = nonEmptyLines.reduce((sum, line) => sum + line.length, 0);
+    avgLineLength = Math.round(totalLengthOfNonEmptyLines / nonEmptyLines.length);
+  }
+
+  // 3. Content-Type Hints
+  const colonCount = (dataSample.match(/:/g) || []).length;
+
+  const nonWhitespaceChars = dataSample.replace(/\s/g, '');
+  let numericDensity = 0;
+  if (nonWhitespaceChars.length > 0) {
+    const digitCount = (nonWhitespaceChars.match(/\d/g) || []).length;
+    numericDensity = parseFloat((digitCount / nonWhitespaceChars.length).toFixed(2)); // Rounded to 2 decimal places
+  }
+
+  // Construct Fingerprint String
+  const fingerprintParts = [
+    `json:${hasJsonChars}`,
+    `xml:${hasXmlChars}`,
+    `lines:${numLines}`,
+    `avgLen:${avgLineLength}`,
+    `colons:${colonCount}`,
+    `numDens:${numericDensity}`
+  ];
+
+  return fingerprintParts.join('|');
+}
+
+
+function generateCacheKey(outputSchema: any, inputFingerprint: string): string {
+  const schemaString = JSON.stringify(outputSchema);
+  const combinedString = `${schemaString}||${inputFingerprint}`; // Separator for clarity
+  return crypto.createHash('sha256').update(combinedString).digest('hex');
+}
+
+function getCachedPlan(key: string): any | undefined {
+  const plan = architectPlanCache.get(key);
+  if (plan) {
+    // Refresh its position for LRU by deleting and re-setting
+    architectPlanCache.delete(key);
+    architectPlanCache.set(key, plan);
+  }
+  return plan;
+}
+
+function setCachedPlan(key: string, plan: any): void {
+  if (architectPlanCache.size >= MAX_CACHE_SIZE && !architectPlanCache.has(key)) {
+    // Evict the oldest (first inserted in Map iteration order)
+    const oldestKey = architectPlanCache.keys().next().value;
+    if (oldestKey) {
+      architectPlanCache.delete(oldestKey);
+    }
+  }
+  architectPlanCache.set(key, plan);
+}
+
+function deleteCachedPlan(key: string): boolean {
+  return architectPlanCache.delete(key);
+}
 
 // Subscription tiers and limits
 const SUBSCRIPTION_LIMITS = {
@@ -479,24 +559,52 @@ export const app = functions.onRequest({
     try {
       // Initialize Gemini with structured output support
       const genAI = new GoogleGenerativeAI(apiKey);
-      
-      // STAGE 1: ARCHITECT with structured output
-      const architectModel = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: architectSchema
+      let searchPlan: any;
+
+      // >>> New Caching Logic Starts Here <<<
+      const forceRefreshArchitect = !!body.forceRefreshArchitect;
+
+      // Generate input fingerprint from the raw sample for cache key generation
+      const sampleForFingerprint = body.inputData.substring(0, 1000); // Raw sample
+      const inputFingerprint = generateInputFingerprint(sampleForFingerprint);
+
+      const cacheKey = generateCacheKey(body.outputSchema, inputFingerprint);
+      let planFromCache = false;
+
+      if (!forceRefreshArchitect) {
+        searchPlan = getCachedPlan(cacheKey);
+        if (searchPlan) {
+          console.log(`CACHE HIT for schema key: ${cacheKey}`);
+          planFromCache = true;
+        } else {
+          console.log(`CACHE MISS for schema key: ${cacheKey}`);
+          planFromCache = false;
         }
-      });
+      } else {
+        console.log(`FORCE REFRESH for schema key: ${cacheKey}`);
+        deleteCachedPlan(cacheKey);
+        planFromCache = false; // Explicitly false as we are refreshing
+      }
 
-      // Escape backticks in user-provided data before embedding in prompts
-      const safeSample = escapeBackticks(body.inputData.substring(0, 1000));
-      const safeInputData = escapeBackticks(body.inputData);
+      if (!searchPlan) {
+        planFromCache = false; // Ensure it's false if we go into architect call
+        // STAGE 1: ARCHITECT with structured output
+        const architectModel = genAI.getGenerativeModel({
+          model: 'gemini-1.5-flash',
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: architectSchema
+          }
+        });
 
-      const architectPrompt = `You are the Architect in a two-stage parsing system. Create a detailed SearchPlan for extracting data.
+        // Escape backticks in user-provided data before embedding in prompts
+        // Note: safeSample is for the prompt, sampleForFingerprint was for the fingerprint.
+        const safeSampleForPrompt = escapeBackticks(sampleForFingerprint);
+
+        const architectPrompt = `You are the Architect in a two-stage parsing system. Create a detailed SearchPlan for extracting data.
 
 SAMPLE DATA:
-${safeSample}
+${safeSampleForPrompt}
 
 TARGET SCHEMA:
 ${JSON.stringify(body.outputSchema, null, 2)}
@@ -510,27 +618,51 @@ INSTRUCTIONS:
   - validation: expected data type
 - Set confidence between 0.8-0.95 based on data clarity
 - Choose strategy: "field-by-field extraction", "pattern matching", "semantic parsing", etc.
+- Aim for a robust plan that can handle minor variations in input data structure where possible.
 - Be precise and actionable
 
 Create a comprehensive SearchPlan that the Extractor can follow exactly.`;
 
-      console.log('🏗️ Calling Architect with structured output...');
-      const architectResult = await architectModel.generateContent(architectPrompt);
-      const architectResponse = architectResult.response.text();
-      
-      let searchPlan;
-      try {
-        const parsed = JSON.parse(architectResponse);
-        searchPlan = parsed.searchPlan;
-        console.log('✅ Architect structured output:', JSON.stringify(searchPlan, null, 2));
-      } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        console.error('❌ Architect structured output failed:', errorMessage);
-        console.error('Raw response:', architectResponse);
-        throw new Error(`Architect failed to create valid SearchPlan: ${errorMessage}`);
+        console.log('🏗️ Calling Architect with structured output...');
+        const architectResult = await architectModel.generateContent(architectPrompt);
+        const architectResponse = architectResult.response.text();
+
+        try {
+          const parsedArchResponse = JSON.parse(architectResponse);
+          searchPlan = parsedArchResponse.searchPlan; // Assign to the outer 'searchPlan'
+          console.log('✅ Architect structured output:', JSON.stringify(searchPlan, null, 2));
+          setCachedPlan(cacheKey, searchPlan); // STORE IN CACHE
+        } catch (e) {
+          const errorMessage = e instanceof Error ? e.message : String(e);
+          console.error('❌ Architect structured output parsing failed:', errorMessage);
+          console.error('Raw Architect response:', architectResponse);
+          // This error will be caught by the main try-catch block for the endpoint
+          throw new Error(`Architect failed to produce a valid SearchPlan JSON: ${errorMessage}`);
+        }
       }
+      
+      // Ensure searchPlan is valid before proceeding to Extractor
+      if (!searchPlan || !searchPlan.steps || !Array.isArray(searchPlan.steps)) {
+          console.error('❌ Invalid or missing searchPlan before Extractor stage. Plan:', JSON.stringify(searchPlan));
+          const processingTimeErr = Date.now() - startTime;
+          return res.status(500).json({
+              success: false,
+              error: {
+                  code: 'ARCHITECT_PLAN_ERROR',
+                  message: 'Failed to obtain a valid search plan from the Architect.',
+              },
+              metadata: {
+                processingTimeMs: processingTimeErr,
+                requestId: `req_${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                version: '1.0.0'
+               }
+          });
+      }
+      // >>> New Caching Logic Ends Here <<<
 
       // STAGE 2: EXTRACTOR with dynamic structured output
+      const safeInputData = escapeBackticks(body.inputData); // Already escaped for Architect, but if plan was cached, inputData wasn't.
       const extractorSchema = createExtractorSchema(body.outputSchema);
       const extractorModel = genAI.getGenerativeModel({
         model: 'gemini-1.5-flash',
@@ -576,8 +708,33 @@ Execute the plan and return the extracted data.`;
       }
 
       const processingTime = Date.now() - startTime;
-      const tokensUsed = Math.floor((architectPrompt.length + extractorPrompt.length) / 4);
+      const tokensUsed = Math.floor((architectPrompt?.length || 0) + (extractorPrompt?.length || 0) / 4); // Handle potentially undefined prompts if error before they are set
       const requestId = `req_${Date.now()}`;
+
+      // >>> New Extractor-Driven Re-architecture Logic <<<
+      let wasCacheInvalidated = false;
+
+      // Only attempt to invalidate if the plan actually came from cache and was not forced.
+      if (planFromCache && searchPlan && searchPlan.steps) {
+        const outputSchemaKeys = Object.keys(body.outputSchema);
+        let missingOrNullFields = 0;
+
+        if (outputSchemaKeys.length > 0) {
+          for (const key of outputSchemaKeys) {
+            if (parsedData[key] === undefined || parsedData[key] === null) {
+              missingOrNullFields++;
+            }
+          }
+
+          const failureThreshold = Math.max(1, Math.floor(outputSchemaKeys.length / 2));
+          if (missingOrNullFields >= failureThreshold) {
+            console.log(`PARSING HEURISTIC FAILED: ${missingOrNullFields}/${outputSchemaKeys.length} top-level fields missing or null. Invalidating cache for key: ${cacheKey}`);
+            deleteCachedPlan(cacheKey);
+            wasCacheInvalidated = true;
+          }
+        }
+      }
+      // >>> End of New Logic <<<
 
       // Track usage for authenticated users and anonymous users (by IP)
       // For anonymous, userId is the IP. For authenticated, it's the actual userId.
@@ -613,17 +770,21 @@ Execute the plan and return the extracted data.`;
         success: true,
         parsedData: parsedData,
         metadata: {
-          architectPlan: searchPlan,
-          confidence: searchPlan.confidence || 0.85,
+          architectPlan: searchPlan, // searchPlan might be large, consider omitting from metadata if too verbose
+          confidence: searchPlan?.confidence || 0.85, // Added safe navigation for confidence
           tokensUsed: tokensUsed,
           processingTimeMs: processingTime,
           requestId: requestId,
           timestamp: new Date().toISOString(),
           version: '1.0.0',
-          features: ['structured-outputs'],
+          features: ['structured-outputs', 'caching', 'extractor-driven-rearchitecture'],
           userTier: (req as any).userTier || 'anonymous',
           billing: (req as any).userTier === 'anonymous' ? 'trial_usage' : 'api_key_usage',
-          userId: (req as any).userId || null
+          userId: (req as any).userId || null,
+          cacheInfo: {
+            retrievedFromCache: planFromCache, // No need for !forceRefreshArchitect here as planFromCache is false if forced
+            invalidatedByExtractor: wasCacheInvalidated
+          }
         }
       });
 
